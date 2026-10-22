@@ -36,6 +36,7 @@
     <li><b>Basılı tut</b> bir askere: ekrandaki aynı türden hepsini seçer. <b>Çift dokun</b> da aynısını yapar.</li>
     <li>Sağdaki düğmeler: <b>⚔ Saldır</b> (saldırarak ilerle), <b>⏹ Dur</b>, <b>▭ Seç</b> (kutu çizerek seç), <b>🛡 Ordu</b> (tüm askerleri seç), <b>🏰 Şehir</b>.</li>
     <li>Bina kurmak için köylü seç, alttaki listeden bir bina seç, <b>parmağınla yerini ayarla</b> ve <b>✓ İnşa et</b>'e dokun. Sur için parmağını sürükle.</li>
+    <li>Kışla/Ahır gibi üretim binasını seçince <b>📍 Toplanma noktası</b>: yeni birimlerin gideceği yeri belirler.</li>
     <li>Alttaki düğme sırasını <b>sağa-sola kaydırarak</b> tüm seçenekleri görürsün. Köşedeki mini haritaya dokunarak oraya gidersin.</li>
     <li>İpucu: oyunu <b>yatay</b> tut. Tarayıcı menüsünde "Ana ekrana ekle" dersen tam ekran ve çevrimdışı açılır.</li></ul>
     <button id="mhelpX">Tamam</button></div>`;

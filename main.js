@@ -238,6 +238,7 @@ function updatePanel() {
       info = `<div class="nm">${d.name}${e.owner === ME ? '' : ' (düşman)'}</div><div class="st">❤ ${Math.ceil(e.hp)}/${e.maxhp}${e.done ? '' : ' &nbsp; 🔨 %' + Math.floor(e.progress * 100)}${d.pop && e.done ? ' &nbsp; 👥 +' + d.pop : ''}</div>`;
       progInfo = null;
       if (e.owner === ME && e.done && d.train) {
+        cmds += `<button class="cb" data-act="rally"><b>📍</b><span>Toplanma noktası</span><em>sonra haritaya dokun</em></button>`;
         cmds += d.train.map((t, i) => { const st = Sim.unitStats(g, ME, t), lk = (UNIT[t].age || 0) > me.age; return `<button class="cb ${lk ? 'lock' : aff(UNIT[t].cost) ? '' : 'dis'}" data-act="train" data-t="${t}"><i>${KEYS[i]}</i><b>${UICON[t]}</b><span>${uname(ME, t)}</span><em>${lk ? lockTxt(UNIT[t].age) : costStr(UNIT[t].cost) + ' · ' + Math.round(st.time) + 'sn'}</em></button>`; }).join('');
         if (e.type === 'tc') {
           const a = Sim.AGES[me.age + 1];
@@ -283,6 +284,7 @@ $('panel').addEventListener('click', ev => {
   const act = b.dataset.act, s = selected();
   if (act === 'place') { if (IS_TOUCH && !(BLD[b.dataset.t].age > g.owners[ME].age)) toast('Haritaya dokunup yerini ayarla, sonra ✓ İnşa et', 2600); if ((BLD[b.dataset.t].age || 0) > g.owners[ME].age) { snd.err(); toast(BLD[b.dataset.t].name + ' için ' + Sim.AGES[BLD[b.dataset.t].age].name + ' gerekli!', 1800); } else if (Sim.canAfford(g.owners[ME], BLD[b.dataset.t].cost)) { mode = { k: 'place', type: b.dataset.t }; snd.click(); } else { snd.err(); toast('Kaynak yetersiz!', 1200); } }
   else if (act === 'amove') { mode = { k: 'amove' }; snd.click(); }
+  else if (act === 'rally') { mode = { k: 'rally' }; snd.click(); toast('Üretilen birimlerin gideceği yere ' + (IS_TOUCH ? 'dokun' : 'tıkla'), 2200); }
   else if (act === 'herocry') { if (Sim.cmdHeroCry(g, ME)) snd.cry(); else snd.err(); }
   else if (act === 'disguise') { if (Sim.cmdDisguise(g, sel)) snd.click(); }
   else if (act === 'spymode') { mode = { k: 'spy', kind: b.dataset.k }; snd.click(); }
@@ -379,6 +381,7 @@ cv.addEventListener('mousedown', ev => {
     if (mode && mode.k === 'place') { if (mode.type === 'wall') wallDrag = { x: Math.floor(mouse.wx), y: Math.floor(mouse.wy) }; else tryPlace(); return; }
     if (mode && mode.k === 'amove') { const u = myUnits(selected()).map(x => x.id); Sim.cmdMove(g, u, mouse.wx, mouse.wy, true); mode = null; snd.cmd(); g.fx.push({ t: 'place', x: mouse.wx, y: mouse.wy, life: 0.35, max: 0.35 }); return; }
     if (mode && mode.k === 'spy') { const e = entityAt(mouse.wx, mouse.wy), sp = myUnits(selected()).filter(u => u.type === 'spy').map(u => u.id); if (e && e.k === 'b' && e.owner >= 0 && e.owner !== ME && Sim.cmdSpy(g, sp, e.id, mode.kind)) { snd.cmd(); mode = null; } else { snd.err(); toast(mode.kind === 'steal' ? 'Teknoloji çalmak için düşman Akademi seç.' : mode.kind === 'loot' ? 'Soygun için düşman Şehir Merkezi seç.' : 'Düşman binası seç.', 1600); } return; }
+    if (mode && mode.k === 'rally') { const b = selected()[0], e = entityAt(mouse.wx, mouse.wy); if (b && b.k === 'b' && b.owner === ME) { if (e && e.k === 'r') Sim.cmdRally(g, b.id, 0, 0, e.id); else Sim.cmdRally(g, b.id, mouse.wx, mouse.wy); g.fx.push({ t: 'place', x: mouse.wx, y: mouse.wy, life: 0.4, max: 0.4 }); snd.cmd(); } mode = null; return; }
     if (mode && mode.k === 'power') { if (Sim.cmdPower(g, ME, mouse.wx, mouse.wy)) { snd.power(); mode = null; } return; }
     drag = { x0: ev.clientX, y0: ev.clientY, moved: false, t: performance.now() };
   } else if (ev.button === 2) {
