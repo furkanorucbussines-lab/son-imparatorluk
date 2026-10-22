@@ -25,7 +25,7 @@
     noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
   }
   function A() {
-    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); build(); } catch (e) { ac = null; return null; } }
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); build(); loadSamples(); } catch (e) { ac = null; return null; } }
     if (ac.state === 'suspended') ac.resume();
     return ac;
   }
@@ -94,7 +94,82 @@
   for (const k in sfx) { const f = sfx[k], gk = GAINS[k] || 1; sfx[k] = (v, p) => { curGain = gk; f(v, p); }; }
   for (const k in snd) { const f = snd[k], gk = GAINS[k] || 1; snd[k] = () => { curGain = gk; f(); }; }
 
-  /* ---------- müzik: Hicaz (D) ---------- */
+
+  /* ---------- gerçek ses örnekleri (CC0: Kenney, StarNinjas, Thimras; CC-BY: Vincent Sevedge) ---------- */
+  const SINGLE = { cannon: 1, gun_cz: 1, gun_sks: 1, gun_mosin: 1, gun_shotty: 1 };
+  const bufs = {}, norm = {}; let sampLoad = 0, sampReady = false;
+  function groupFiles(g) { if (SINGLE[g]) return [g]; const n = g === 'clash' || g === 'swish' ? 10 : 5, o = []; for (let i = 0; i < n; i++) o.push(g + (n === 10 ? i + 1 : i)); return o; }
+  function sfile(n) { return 'audio/sfx/' + n + (n.indexOf('gun_') === 0 ? '.wav' : '.ogg'); }
+  function loadSamples() {
+    if (sampLoad || !ac || typeof fetch !== 'function') return; sampLoad = 1;
+    fetch('audio/manifest.json').then(r => { if (!r.ok) throw new Error('manifest'); return r.json(); }).then(man => {
+      const names = []; for (const g of ['clash', 'swish', 'woodL', 'woodH', 'plank', 'metalL', 'metalM', 'metalH', 'bell', 'punchM', 'punchH', 'softH', 'softM', 'tin', 'plateM', 'mine', 'cannon', 'gun_cz', 'gun_sks', 'gun_mosin', 'gun_shotty']) names.push(...groupFiles(g));
+      return Promise.all(names.map(n => { const f = sfile(n), m = man[f.replace('audio/sfx/', '')]; return fetch(f).then(r => r.arrayBuffer()).then(ab => new Promise((res, rej) => ac.decodeAudioData(ab, res, rej))).then(b => { bufs[n] = b; norm[n] = m && m.peak > 0.02 ? Math.min(3, 0.8 / m.peak) : 1; }).catch(() => { /* eksik dosya: işlevsel yedek kalır */ }); }));
+    }).then(() => { sampReady = Object.keys(bufs).length > 20; }).catch(() => { sampReady = false; });
+  }
+  // [grup, ses, hızMin, hızMax, yankı, gecikme]
+  const SM_SFX = {
+    clang: [['clash', 0.9, 0.92, 1.12, 0.15, 0]], twang: [['swish', 0.35, 1.3, 1.6, 0.05, 0]],
+    cannon: [['cannon', 1.0, 0.95, 1.05, 0.35, 0]], howitzer: [['cannon', 1.2, 0.7, 0.8, 0.5, 0]],
+    crash: [['woodH', 1.0, 0.6, 0.8, 0.4, 0], ['plank', 0.8, 0.7, 0.9, 0.3, 0.08], ['woodH', 0.7, 0.5, 0.7, 0.4, 0.2]],
+    boom: [['cannon', 1.3, 0.5, 0.6, 0.6, 0], ['woodH', 0.9, 0.5, 0.6, 0.5, 0.05]], thud: [['punchM', 0.7, 0.8, 1.0, 0.06, 0]],
+    missile: [['gun_shotty', 0.6, 0.5, 0.6, 0.4, 0], ['swish', 0.5, 0.5, 0.7, 0.3, 0.05]],
+    mg: [['gun_cz', 0.5, 1.5, 1.7, 0.08, 0], ['gun_cz', 0.5, 1.5, 1.7, 0.08, 0.06], ['gun_cz', 0.5, 1.5, 1.7, 0.08, 0.12]],
+    rifle: [['gun_sks', 0.8, 0.95, 1.05, 0.3, 0]], sniper: [['gun_mosin', 1.0, 0.85, 0.95, 0.5, 0]],
+    rpg: [['gun_shotty', 0.9, 0.55, 0.65, 0.4, 0], ['swish', 0.5, 0.5, 0.7, 0.3, 0.05]],
+    hammer: [['woodL', 0.7, 0.9, 1.2, 0.05, 0], ['metalL', 0.4, 0.9, 1.2, 0.04, 0.03]], heal: [['bell', 0.25, 1.8, 2.1, 0.3, 0]]
+  };
+  const SM_SND = {
+    click: [['tin', 0.35, 1.0, 1.2, 0.03, 0]], cmd: [['woodL', 0.5, 1.0, 1.15, 0.03, 0]], err: [['plank', 0.6, 0.6, 0.7, 0.02, 0]],
+    trained: [['bell', 0.5, 1.7, 1.9, 0.25, 0]], built: [['woodH', 0.8, 0.9, 1.0, 0.2, 0], ['bell', 0.35, 1.5, 1.5, 0.3, 0.12]],
+    alert: [['bell', 0.9, 0.7, 0.7, 0.5, 0], ['bell', 0.9, 0.7, 0.7, 0.5, 0.45], ['bell', 0.9, 0.7, 0.7, 0.5, 0.9]],
+    power: [['cannon', 1.1, 0.55, 0.6, 0.6, 0], ['bell', 0.6, 0.5, 0.5, 0.6, 0.2]],
+    age: [['bell', 0.9, 0.55, 0.55, 0.7, 0], ['bell', 0.8, 0.8, 0.8, 0.7, 0.3], ['bell', 0.8, 1.05, 1.05, 0.7, 0.6], ['bell', 0.9, 1.3, 1.3, 0.7, 0.9]],
+    win: [['cannon', 1.0, 0.9, 0.9, 0.5, 0], ['bell', 0.9, 0.7, 0.7, 0.7, 0.2], ['bell', 0.9, 0.95, 0.95, 0.7, 0.5], ['bell', 0.9, 1.25, 1.25, 0.7, 0.8], ['bell', 1.0, 1.5, 1.5, 0.7, 1.1]],
+    lose: [['metalH', 1.0, 0.5, 0.5, 0.5, 0], ['bell', 0.8, 0.45, 0.45, 0.7, 0.3], ['bell', 0.7, 0.38, 0.38, 0.7, 0.9]],
+    tech: [['bell', 0.5, 1.6, 1.6, 0.3, 0], ['bell', 0.5, 2.0, 2.0, 0.3, 0.1]],
+    cry: [['clash', 0.9, 0.8, 0.9, 0.3, 0], ['clash', 0.8, 0.9, 1.0, 0.3, 0.07], ['clash', 0.8, 0.8, 1.0, 0.3, 0.14], ['punchH', 0.8, 0.6, 0.7, 0.3, 0]],
+    spy: [['softM', 0.5, 1.5, 1.7, 0.1, 0]]
+  };
+  function playLayers(layers, v, p) {
+    if (!sampReady || muted || !A()) return false; curGain = 1; let ok = false;
+    for (const [g, vol, r0, r1, wet, dl] of layers) {
+      const files = groupFiles(g).filter(n => bufs[n]); if (!files.length) continue;
+      const n = files[Math.floor(R() * files.length)], s = ac.createBufferSource(); s.buffer = bufs[n]; s.playbackRate.value = r0 + R() * (r1 - r0);
+      const o = out('sfx', p || 0, wet); o.gain.value *= vol * (norm[n] || 1) * Math.max(0.15, v === undefined ? 1 : v); s.connect(o); s.start(ac.currentTime + dl); ok = true;
+    }
+    return ok;
+  }
+  for (const k in SM_SFX) { const proc = sfx[k]; sfx[k] = (v, p) => { if (!playLayers(SM_SFX[k], v, p)) proc(v, p); }; }
+  for (const k in SM_SND) { const proc = snd[k]; snd[k] = () => { if (!playLayers(SM_SND[k], 1, 0)) proc(); }; }
+
+  /* ---------- müzik: gerçek parçalar (CC0); yüklenemezse eski kodla üretilen müziğe düşer ---------- */
+  const MUS = { menu: ['audio/music/battle.mp3'], game: ['audio/music/war2.ogg', 'audio/music/battle.mp3'] };
+  let mEl = null, mKind = '', mIdx = 0, mFail = false, mPend = false, mTimer = 0, mStopAfter = false, fbKind = null;
+  const mTarget = () => muted || !musicOn ? 0 : (ducked ? 0.07 : 0.45) * vols.music;
+  function mFade() {
+    clearInterval(mTimer); mTimer = setInterval(() => {
+      if (!mEl) { clearInterval(mTimer); return; }
+      const tg = mTarget(), d = tg - mEl.volume;
+      if (Math.abs(d) < 0.03) { mEl.volume = Math.max(0, Math.min(1, tg)); clearInterval(mTimer); if (mStopAfter && tg === 0) { mEl.pause(); mEl = null; mKind = ''; mStopAfter = false; } return; }
+      mEl.volume = Math.max(0, Math.min(1, mEl.volume + Math.sign(d) * 0.035));
+    }, 50);
+  }
+  function mStart() {
+    const list = MUS[mKind]; if (!list) return; const el = new Audio(list[mIdx % list.length]); el.preload = 'auto'; el.loop = list.length === 1; el.volume = 0;
+    el.addEventListener('ended', () => { if (mEl !== el) return; mIdx++; mStart(); });
+    el.addEventListener('error', () => { if (mEl === el) { mFail = true; mEl = null; mKind = ''; if (fbKind && musicOn) { A(); setTheme(fbKind); } } });
+    mEl = el; mStopAfter = false; const p = el.play(); if (p && p.catch) p.catch(() => { mPend = true; }); mFade();
+  }
+  function mPlay(kind) {
+    if (mFail || typeof Audio === 'undefined') return false;
+    if (mEl && mKind === kind && !mStopAfter) { mFade(); return true; }
+    if (mEl) { const old = mEl; mEl = null; const f = setInterval(() => { old.volume = Math.max(0, old.volume - 0.06); if (old.volume <= 0.01) { clearInterval(f); old.pause(); } }, 50); }
+    mKind = kind; mIdx = kind === 'game' ? Math.floor(R() * MUS.game.length) : 0; mStart(); return true;
+  }
+  function mStop() { if (!mEl) return; mStopAfter = true; mFade(); }
+
+  /* ---------- müzik: Hicaz (D) — yedek ---------- */
   const SC = [0, 1, 4, 5, 7, 8, 10];
   const deg2f = (d, rootF) => rootF * Math.pow(2, (SC[((d % 7) + 7) % 7] + 12 * Math.floor(d / 7)) / 12);
   // [derece, 16'lık adım sayısı]
@@ -215,7 +290,7 @@
     const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const bp = ac.createBiquadFilter(), g = G(0.0001), lfo = ac.createOscillator(), lg = G(260);
     bp.type = 'bandpass'; bp.frequency.value = 520; bp.Q.value = 0.7; lfo.frequency.value = 0.07; lfo.connect(lg); lg.connect(bp.frequency); s.connect(bp); bp.connect(g); g.connect(ambBus); g.gain.linearRampToValueAtTime(0.05, ac.currentTime + 3); s.start(); lfo.start(); ambNodes = { s, g, lfo };
     const bird = () => { if (!ambOn) return; if (!muted && !ducked && intensity < 0.4 && ac) { const t = ac.currentTime, o = out('amb', (R() - 0.5) * 1.4, 0.15), f = 2600 + R() * 1400, n = 2 + Math.floor(R() * 3); for (let i = 0; i < n; i++) osc('sine', f, t + i * 0.11, 0.09, o, 0.03, { f1: f * (1.15 + R() * 0.3) }); } birdTimer = setTimeout(bird, 4000 + R() * 9000); };
-    birdTimer = setTimeout(bird, 3000);
+    /* kuş cıvıltısı (sentetik) kapatıldı */
   }
   // hava: yağmur/fırtına gürültü yatağı
   let wx = null;
@@ -239,17 +314,18 @@
   const AGE_THEME = ['kale', 'barut', 'sanayi', 'modern'];
   root.GameAudio = {
     sfx, snd, _offline: renderOffline,
-    unlock() { A(); },
-    startMusic(age) { if (musicOn) { A(); setTheme(AGE_THEME[Math.min(3, age || 0)]); } startAmbience(); },
-    menuMusic(on) { if (on) { if (musicOn) { A(); setTheme('menu'); } } else stopMusic(); stopAmbience(); },
-    stopMusic() { stopMusic(); stopAmbience(); },
-    setAge(age) { if (timer && themeName !== 'menu') setTheme(AGE_THEME[Math.min(3, age || 0)]); },
+    unlock() { A(); if (mPend && mEl) { mPend = false; const p = mEl.play(); if (p && p.catch) p.catch(() => { mPend = true; }); } },
+    startMusic(age) { fbKind = AGE_THEME[Math.min(3, age || 0)]; if (musicOn) { A(); if (!mPlay('game')) setTheme(fbKind); } startAmbience(); },
+    menuMusic(on) { if (on) { fbKind = 'menu'; if (musicOn) { A(); if (!mPlay('menu')) setTheme('menu'); } } else { mStop(); stopMusic(); } stopAmbience(); },
+    stopMusic() { mStop(); stopMusic(); stopAmbience(); },
+    setAge(age) { fbKind = AGE_THEME[Math.min(3, age || 0)]; if (timer && themeName !== 'menu') setTheme(fbKind); },
     setIntensity(v) { intensityT = Math.max(0, Math.min(1, v)); },
-    setMuted(m) { muted = !!m; if (ac) { master.gain.cancelScheduledValues(ac.currentTime); master.gain.linearRampToValueAtTime(muted ? 0.0001 : 0.9, ac.currentTime + 0.15); } },
-    setMusicOn(on, age) { musicOn = !!on; if (!on) stopMusic(); else if (age !== undefined) { setTheme(age === -1 ? 'menu' : AGE_THEME[Math.min(3, age || 0)]); } },
+    setMuted(m) { muted = !!m; mFade(); if (ac) { master.gain.cancelScheduledValues(ac.currentTime); master.gain.linearRampToValueAtTime(muted ? 0.0001 : 0.9, ac.currentTime + 0.15); } },
+    setMusicOn(on, age) { musicOn = !!on; if (!on) { mFade(); stopMusic(); } else if (age !== undefined) { if (!mPlay(age === -1 ? 'menu' : 'game')) setTheme(age === -1 ? 'menu' : AGE_THEME[Math.min(3, age || 0)]); } },
     setWeather(kind, s) { setWeather(kind, s); },
-    setVolumes(v) { if (v.sfx !== undefined) vols.sfx = v.sfx; if (v.music !== undefined) { vols.music = v.music; if (ac && timer) fadeTo(level(), 0.2); } if (v.amb !== undefined) { vols.amb = v.amb; if (ac) ambBus.gain.value = 0.5 * v.amb; } },
-    duck(d) { ducked = !!d; if (ac && timer) fadeTo(level(), 0.4); },
+    setVolumes(v) { if (v.sfx !== undefined) vols.sfx = v.sfx; if (v.music !== undefined) { vols.music = v.music; mFade(); if (ac && timer) fadeTo(level(), 0.2); } if (v.amb !== undefined) { vols.amb = v.amb; if (ac) ambBus.gain.value = 0.5 * v.amb; } },
+    duck(d) { ducked = !!d; mFade(); if (ac && timer) fadeTo(level(), 0.4); },
+    _state() { return { sampReady, n: Object.keys(bufs).length, mKind, mFail, mPaused: mEl ? mEl.paused : null, mVol: mEl ? +mEl.volume.toFixed(2) : null, mT: mEl ? +mEl.currentTime.toFixed(1) : null, mDur: mEl ? mEl.duration : null }; },
     get musicOn() { return musicOn; }, get muted() { return muted; }
   };
 })(window);

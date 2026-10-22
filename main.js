@@ -8,7 +8,8 @@ const mini = $('mini'), mctx = mini.getContext('2d');
 const TEAM = ['#2f7de1', '#d83a34'];
 const ME = 0;
 let g = null, running = false, paused = false, speed = 1, acc = 0, last = 0;
-let ts = 38, cam = { x: 0, y: 0 }, vw = 0, vh = 0, dpr = 1;
+const RC = document.documentElement.classList, MOBILE = RC.contains('mobile');
+let ts = MOBILE ? 46 : 38, cam = { x: 0, y: 0 }, vw = 0, vh = 0, dpr = 1;
 let sel = [], groups = {}, mode = null; // mode: {k:'place',type} | {k:'amove'} | {k:'power'}
 let mouse = { x: 0, y: 0, wx: 0, wy: 0, in: false }, drag = null, keys = {};
 let muted = false, pings = [], lastAlert = null, toasts = [];
@@ -54,12 +55,11 @@ function fxSounds(dt) {
   combat = Math.min(1, combat + hits * 0.07); combat *= Math.pow(0.5, (dt || 0.016) / 6);
   GameAudio.setIntensity(combat);
 }
-document.addEventListener('pointerdown', () => GameAudio.unlock(), { once: true });
-document.addEventListener('keydown', () => GameAudio.unlock(), { once: true });
+['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => GameAudio.unlock(), { passive: true })); // dokunmatikte kullanıcı etkinliği parmak kalkınca sayılır
 
 /* ---------- görünüm ---------- */
 function resize() {
-  dpr = window.devicePixelRatio || 1; vw = window.innerWidth; vh = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 2 : 3); vw = window.innerWidth; vh = window.innerHeight;
   cv.width = vw * dpr; cv.height = vh * dpr; cv.style.width = vw + 'px'; cv.style.height = vh + 'px';
   clampCam();
 }
@@ -210,7 +210,7 @@ function updatePanel() {
     if (units.length === 1) {
       const u = units[0];
       info = `<div class="nm">${uname(ME, u.type)}</div><div class="st">❤ ${Math.ceil(u.hp)}/${u.maxhp} &nbsp; ⚔ ${u.st.atk.toFixed(0)} &nbsp; 🛡 ${u.st.armor}${u.type === 'villager' && u.carry ? ' &nbsp; 📦 ' + u.carry : ''}</div><div class="hint">${u.order === 'gather' ? 'Topluyor' : u.order === 'build' ? 'İnşa ediyor' : u.order === 'attack' ? 'Saldırıyor' : u.order === 'idle' ? 'Beklemede' : 'Hareket ediyor'}</div>`;
-    } else info = `<div class="nm">${units.length} birim</div><div class="chips">${Object.keys(cnt).map(t => `<span>${uname(ME, t)} ×${cnt[t]}</span>`).join('')}</div>`;
+    } else info = `<div class="nm">${units.length} birim</div><div class="chips">${Object.keys(cnt).map(t => `<span data-chip="${t}">${uname(ME, t)} ×${cnt[t]}</span>`).join('')}</div>`;
     if (units.some(u => u.type === 'engineer')) info += '<div class="hint">📐 Köprü (su üstüne), Sur (sürükle), Kapı, Mayın kurar. Hasarlı binaya sağ tık → onarır. İnşaatı 1.6x hızlı yapar.</div>';
     if (units.some(u => u.type === 'villager' || u.type === 'engineer')) {
       if (!units.some(u => u.type === 'villager')) info += '';
@@ -278,9 +278,10 @@ function updatePanel() {
     } }
 }
 $('panel').addEventListener('click', ev => {
+  const chip = ev.target.closest('[data-chip]'); if (chip && g) { const ids = myUnits(selected()).filter(u => u.type === chip.dataset.chip).map(u => u.id); if (ids.length) setSel(ids); lastSig = ''; return; }
   const b = ev.target.closest('[data-act]'); if (!b || !g) return;
   const act = b.dataset.act, s = selected();
-  if (act === 'place') { if ((BLD[b.dataset.t].age || 0) > g.owners[ME].age) { snd.err(); toast(BLD[b.dataset.t].name + ' için ' + Sim.AGES[BLD[b.dataset.t].age].name + ' gerekli!', 1800); } else if (Sim.canAfford(g.owners[ME], BLD[b.dataset.t].cost)) { mode = { k: 'place', type: b.dataset.t }; snd.click(); } else { snd.err(); toast('Kaynak yetersiz!', 1200); } }
+  if (act === 'place') { if (IS_TOUCH && !(BLD[b.dataset.t].age > g.owners[ME].age)) toast('Haritaya dokunup yerini ayarla, sonra ✓ İnşa et', 2600); if ((BLD[b.dataset.t].age || 0) > g.owners[ME].age) { snd.err(); toast(BLD[b.dataset.t].name + ' için ' + Sim.AGES[BLD[b.dataset.t].age].name + ' gerekli!', 1800); } else if (Sim.canAfford(g.owners[ME], BLD[b.dataset.t].cost)) { mode = { k: 'place', type: b.dataset.t }; snd.click(); } else { snd.err(); toast('Kaynak yetersiz!', 1200); } }
   else if (act === 'amove') { mode = { k: 'amove' }; snd.click(); }
   else if (act === 'herocry') { if (Sim.cmdHeroCry(g, ME)) snd.cry(); else snd.err(); }
   else if (act === 'disguise') { if (Sim.cmdDisguise(g, sel)) snd.click(); }
@@ -305,6 +306,7 @@ function toast(text, ms) {
 
 /* ---------- üst çubuk ---------- */
 function updateHud() {
+  { const pb = $('pbar'); if (pb) pb.classList.toggle('on', !!(mode && mode.k === 'place' && mode.pending && mode.type !== 'wall')); }
   const me = g.owners[ME], t = Math.floor(g.time);
   $('rf').textContent = Math.floor(me.res.f); $('rw').textContent = Math.floor(me.res.w); $('rg').textContent = Math.floor(me.res.g); $('ri').textContent = Math.floor(me.res.i);
   $('age').textContent = me.ageUp ? Sim.AGES[me.age].name.replace(' Çağı', '') + ' → ' + Sim.AGES[me.ageUp.to].name.replace(' Çağı', '') + ' %' + Math.floor(me.ageUp.t / me.ageUp.time * 100) : Sim.AGES[me.age].name;
@@ -432,18 +434,21 @@ window.addEventListener('keyup', ev => { delete keys[ev.key]; });
 window.addEventListener('blur', () => { keys = {}; });
 
 /* ---------- dokunmatik (telefon/tablet) ---------- */
-const IS_TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window;
-if (IS_TOUCH) document.body.classList.add('touch');
+const IS_TOUCH = RC.contains('touch') || (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window;
+if (IS_TOUCH) RC.add('touch');
 let boxMode = false; const tpts = new Map(); let tg = null, pinch = null;
-function tSetMouse(x, y) { mouse.x = x; mouse.y = y; const w = toWorld(x, y); mouse.wx = w.x; mouse.wy = w.y; }
+function tSetMouse(x, y) { mouse.in = true; mouse.x = x; mouse.y = y; const w = toWorld(x, y); mouse.wx = w.x; mouse.wy = w.y; }
 function synthClick(x, y) { // modlar ve seçim için fare tıklamasını taklit et
   cv.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y, button: 0, bubbles: true }));
   window.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y, button: 0, bubbles: true }));
 }
+const RING = [[0, 0], [0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4], [0.3, 0.3], [-0.3, 0.3], [0.3, -0.3], [-0.3, -0.3], [0.8, 0], [-0.8, 0], [0, 0.8], [0, -0.8]];
+function touchPick(wx, wy) { for (const [ox, oy] of RING) { const e = entityAt(wx + ox, wy + oy, true); if (e) return e; } return null; }
 function tapAt(x, y) {
   tSetMouse(x, y);
   if (mode) { synthClick(x, y); return; }
-  const e = entityAt(mouse.wx, mouse.wy, true), mine = myUnits(selected());
+  const e = touchPick(mouse.wx, mouse.wy), mine = myUnits(selected());
+  if (e && (e.k === 'u' || e.k === 'b')) { const c = Sim.centerOf(e); mouse.wx = e.k === 'u' ? e.x : c.x; mouse.wy = e.k === 'u' ? e.y : c.y; }
   if (e && e.k === 'u' && e.owner === ME) { synthClick(x, y); return; }
   if (mine.length && !boxMode) {
     if (e && e.k === 'b' && e.owner === ME && !mine.some(u => u.type === 'villager' || u.type === 'engineer')) { synthClick(x, y); return; }
@@ -462,7 +467,7 @@ cv.addEventListener('pointerdown', ev => {
     return;
   }
   if (tpts.size > 2) return;
-  tSetMouse(ev.clientX, ev.clientY);
+  tSetMouse(ev.clientX, ev.clientY - (mode && mode.k === 'place' && mode.type !== 'wall' ? 56 : 0)); if (mode && mode.k === 'place') mode.pending = false;
   tg = { x0: ev.clientX, y0: ev.clientY, cx0: cam.x, cy0: cam.y, moved: false, long: false };
   if (mode && mode.k === 'place' && mode.type === 'wall') wallDrag = { x: Math.floor(mouse.wx), y: Math.floor(mouse.wy) };
   tg.lp = setTimeout(() => { // basılı tut: aynı türden hepsini seç
@@ -480,8 +485,8 @@ cv.addEventListener('pointermove', ev => {
   if (!tg) return;
   const dx = ev.clientX - tg.x0, dy = ev.clientY - tg.y0;
   if (!tg.moved && Math.hypot(dx, dy) > 9) { tg.moved = true; clearTimeout(tg.lp); }
-  tSetMouse(ev.clientX, ev.clientY);
-  if (!tg.moved) return;
+  tSetMouse(ev.clientX, ev.clientY - (mode && mode.k === 'place' && mode.type !== 'wall' ? 56 : 0));
+  if (!tg.moved && !(mode && mode.k === 'place')) return;
   if (mode) return;                      // yerleştirme/güç modunda parmak nişan alır
   if (boxMode) { drag = { x0: tg.x0, y0: tg.y0, moved: true, t: performance.now() }; return; }
   cam.x = tg.cx0 - dx / ts; cam.y = tg.cy0 - dy / ts; clampCam();
@@ -492,11 +497,11 @@ function tEnd(ev) {
   if (!tg || tpts.size) { if (!tpts.size) tg = null; return; }
   clearTimeout(tg.lp); const t = tg; tg = null;
   if (ev.type === 'pointercancel') { drag = null; wallDrag = null; return; }
-  tSetMouse(ev.clientX, ev.clientY);
+  tSetMouse(ev.clientX, ev.clientY - (mode && mode.k === 'place' && mode.type !== 'wall' ? 56 : 0));
   if (wallDrag) { finishWall(); return; }
   if (t.long) return;
   if (drag) { doSelectBox(drag.x0, drag.y0, ev.clientX, ev.clientY, false); drag = null; return; }
-  if (mode && mode.k === 'place') { tryPlace(); return; }
+  if (mode && mode.k === 'place') { mode.pending = true; return; }
   if (mode) { if (t.moved) { synthClick(ev.clientX, ev.clientY); } else synthClick(ev.clientX, ev.clientY); return; }
   if (!t.moved) tapAt(ev.clientX, ev.clientY);
 }
@@ -512,6 +517,7 @@ if (tb) tb.addEventListener('click', ev => {
   else if (a === 'stop') { if (myUnits(s).length) Sim.cmdStop(g, sel); }
   else if (a === 'box') { boxMode = !boxMode; b.classList.toggle('on', boxMode); toast(boxMode ? 'Kutu seçim: parmağını sürükle' : 'Kutu seçim kapalı: sürükleyince harita kayar', 1600); }
   else if (a === 'home') { const tc = g.ents.find(e => !e.dead && e.owner === ME && e.type === 'tc'); if (tc) { const c = Sim.centerOf(tc); centerOn(c.x, c.y); sel = [tc.id]; } }
+  else if (a === 'army') { const ids = g.ents.filter(e => !e.dead && e.k === 'u' && e.owner === ME && e.type !== 'villager' && e.type !== 'engineer' && !(e.st && e.st.atk === 0 && e.type !== 'medic')).map(e => e.id); if (ids.length) { setSel(ids); toast(ids.length + ' asker seçildi', 1200); } else toast('Hiç askerin yok', 1200); }
   else if (a === 'cancel') { mode = null; wallDrag = null; sel = []; }
   else if (a === 'full') { const d = document, el = d.documentElement; if (d.fullscreenElement) d.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen().then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* yok */ } }).catch(() => {}); }
 });
@@ -566,7 +572,7 @@ function frame(now) {
 
 /* ---------- menü ---------- */
 function showMenu() {
-  running = false; $('menu').classList.remove('hide'); $('hud').classList.add('hide'); GameAudio.menuMusic(true);
+  document.body.classList.add('in-menu'); running = false; $('menu').classList.remove('hide'); $('hud').classList.add('hide'); GameAudio.menuMusic(true);
 }
 document.querySelectorAll('img[data-flag]').forEach(i => { i.src = Flags.uri[i.dataset.flag]; });
 function pickCiv(c) { menuCiv = c; document.querySelectorAll('.civ').forEach(e => e.classList.toggle('on', e.dataset.c === c)); }
@@ -596,6 +602,7 @@ function startCampaign(idx) {
   g = Campaign.create(idx); menuCiv = Campaign.MISSIONS[idx].civ; enterGame();
 }
 function enterGame() {
+  document.body.classList.remove('in-menu');
   $('myflag').src = Flags.uri[menuCiv]; lastAuto = g.time;
   Render.init(g); sel = []; mode = null; groups = {}; pings = []; lastAlert = null; speed = 1; paused = false;
   $('spd').textContent = '⏩ 1x'; $('toasts').innerHTML = '';
@@ -610,7 +617,7 @@ function enterGame() {
 window.addEventListener('resize', resize);
 resize(); applySettings(); pickCiv('osmanli'); pickDiff('normal'); showMenu();
 requestAnimationFrame(t => { last = t; frame(t); });
-window.__game = { startCampaign, get sel() { return sel; }, set sel(v) { sel = v; }, get cam() { return cam; }, get ts() { return ts; }, get g() { return g; }, get settings() { return settings; }, set settings(v) { settings = v; }, DEFSET, applySettings, save: saveGame, load: loadGame, listSaves, deleteSave, Sim, centerOn, setZoom: z => { ts = z; resize(); }, select: ids => { sel = ids; lastSig = ""; } };
+window.__game = { placeConfirm: ok => { if (ok && mode && mode.k === 'place') tryPlace(); else { mode = null; wallDrag = null; } }, startCampaign, get sel() { return sel; }, set sel(v) { sel = v; }, get cam() { return cam; }, get ts() { return ts; }, get g() { return g; }, get settings() { return settings; }, set settings(v) { settings = v; }, DEFSET, applySettings, save: saveGame, load: loadGame, listSaves, deleteSave, Sim, centerOn, setZoom: z => { ts = z; resize(); }, select: ids => { sel = ids; lastSig = ""; } };
 })();
 
 /* ---------- bina açıklaması (üstüne gelince) ---------- */

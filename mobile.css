@@ -1,0 +1,124 @@
+/* Telefon / tablet: sade ana menü, kompakt oyun arayüzü, büyük dokunma hedefleri */
+
+/* ---------- ana menü (yalnız telefonda) ---------- */
+#mm{display:none}
+html.mobile #menu{display:none!important}
+html.mobile #mm{position:fixed;inset:0;z-index:11;overflow:auto;-webkit-overflow-scrolling:touch;color:#efe8d2;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(ellipse at 70% 12%,#6a3a52 0,#2a1c3c 38%,#0a0b16 78%);padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+html.mobile body:not(.in-menu) #mm{display:none}
+html.mobile body.in-menu #mm{display:block}
+#mm .mm-sky{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 80% 18%,#ffcf6a33 0,transparent 38%),linear-gradient(transparent 55%,#0a0a14 100%)}
+#mm .mm-city{position:absolute;left:0;right:0;bottom:0;height:34%;pointer-events:none;opacity:.5}
+#mm .mm-wrap{position:relative;max-width:980px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;gap:10px}
+#mm .mm-head small{display:block;font-size:11px;letter-spacing:5px;color:#e8c24a;text-transform:uppercase}
+#mm .mm-head h1{margin:2px 0 0;font:800 clamp(26px,7vw,44px) "Palatino Linotype","Book Antiqua",Georgia,serif;letter-spacing:3px;line-height:1.05;background:linear-gradient(#fff3b8,#e8c24a 55%,#a8761a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #3a2406)}
+#mm .mm-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+#mm .mm-col{display:flex;flex-direction:column;gap:10px}
+#mm .mm-lab{font-size:11px;letter-spacing:3px;color:#bdb394;text-transform:uppercase;margin-bottom:-4px}
+#mm .mm-civs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#mm .mm-civ{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:2px solid #ffffff2a;background:#0b0d1ccc;color:#fff;font:700 16px system-ui;min-height:52px}
+#mm .mm-civ img{height:26px;border-radius:3px}
+#mm .mm-civ.on{border-color:#e8c24a;background:#3a2f0acc;box-shadow:0 0 18px #e8c24a44}
+#mm .mm-diff{display:grid;grid-template-columns:repeat(3,1fr);border-radius:12px;overflow:hidden;border:1px solid #ffffff2a}
+#mm .mm-diff button{padding:12px 4px;font:600 15px system-ui;color:#efe8d2;background:#0b0d1ccc;border:0;min-height:46px}
+#mm .mm-diff button.on{background:#e8c24a;color:#2a1a00}
+#mm .mm-go{padding:18px;border:0;border-radius:50px;font:800 20px system-ui;letter-spacing:3px;color:#2a1a00;background:linear-gradient(#ffe48a,#e8b830 55%,#b8861a);box-shadow:0 5px 0 #6a4a08,0 10px 26px #000a;min-height:58px}
+#mm .mm-go:active{transform:translateY(3px);box-shadow:0 2px 0 #6a4a08}
+#mm .mm-camp{padding:14px;border-radius:50px;border:2px solid #e8c24a88;background:linear-gradient(#3a2f0acc,#1c1604cc);color:#ffd66a;font:700 17px system-ui;min-height:52px}
+#mm .mm-sec{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+#mm .mm-sec button,#mm .mm-ghost{padding:12px 8px;border-radius:12px;border:1px solid #ffffff33;background:#0b0d1ccc;color:#efe8d2;font:600 14px system-ui;min-height:46px}
+#mm .mm-foot{margin-top:auto;display:flex;gap:12px;align-items:center;justify-content:space-between;font-size:12px;color:#a9a48c;flex-wrap:wrap}
+#mm .mm-foot a{color:#e8c24a}
+@media (orientation:portrait){#mm .mm-body{grid-template-columns:1fr}}
+@media (max-height:430px) and (orientation:landscape){#mm .mm-head h1{font-size:28px}#mm .mm-go{padding:12px;min-height:48px;font-size:18px}#mm .mm-wrap{gap:6px}#mm .mm-col{gap:7px}#mm .mm-civ{min-height:44px;padding:6px 10px}}
+#mhelp{position:fixed;inset:0;z-index:70;background:#05060df2;display:none;align-items:center;justify-content:center;padding:14px;overflow:auto;color:#efe8d2;font:15px/1.5 system-ui}
+#mhelp.on{display:flex}
+#mhelp .card{max-width:680px;background:linear-gradient(#1c2012,#0e110a);border:1px solid #8a6d24;border-radius:16px;padding:18px 20px}
+#mhelp h2{margin:0 0 8px;color:#e8c24a;font:700 22px Georgia,serif}
+#mhelp li{margin:5px 0}#mhelp b{color:#ffd66a}
+#mhelp button{margin-top:10px;padding:12px 26px;border-radius:30px;border:0;background:#e8c24a;color:#2a1a00;font:700 16px system-ui}
+
+/* ---------- oyun içi (dokunmatik) ---------- */
+html.touch canvas#map,html.touch #mini,html.touch #hud{touch-action:none}
+html.touch #cmds{touch-action:pan-x pan-y}
+html.touch *{-webkit-tap-highlight-color:transparent}
+html.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;right:max(8px,env(safe-area-inset-right));bottom:176px;z-index:8}
+html.touch #tbar button.on{border-color:var(--gold);background:linear-gradient(#6a5a1cee,#3a2e0cee)}
+#pbar{display:none;position:absolute;left:50%;bottom:130px;transform:translateX(-50%);z-index:9;gap:10px}
+html.touch #pbar.on{display:flex}
+#pbar button{padding:12px 22px;border-radius:30px;border:0;font:700 16px system-ui;min-height:48px;box-shadow:0 4px 14px #000a}
+#pbar .ok{background:linear-gradient(#7be08a,#2f9a48);color:#06240c}#pbar .no{background:linear-gradient(#ff8a80,#c0392b);color:#2a0604}
+html.mobile #hud{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+html.mobile #top{height:36px;gap:4px;padding:0 6px;font-size:13px;overflow:hidden}
+html.mobile #top .res{padding:2px 7px;min-width:0;white-space:nowrap}
+html.mobile #top button{padding:3px 8px;min-height:30px}
+html.mobile #power b,html.mobile #envbox,html.mobile #agebox span,html.mobile #mute,html.mobile #music,html.mobile #pause{display:none}
+html.mobile #panel{height:104px;padding:5px 6px;gap:6px}
+html.mobile #info{width:132px;flex:none;padding:5px 8px;font-size:12px;overflow:auto}
+html.mobile #info .hint{display:none}
+html.mobile #info .nm{font-size:14px}
+html.mobile #info .chips{display:flex;flex-wrap:wrap;gap:3px}
+html.mobile #info .chips span{padding:3px 6px;border-radius:8px;background:#ffffff14;border:1px solid #ffffff22;font-size:11px}
+html.mobile #cmds{flex:1;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;align-content:flex-start;gap:6px;padding:2px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+html.mobile .cb{flex:none;width:76px;height:92px;scroll-snap-align:start;padding:4px 2px}
+html.mobile .cb i{display:none}
+html.mobile .cb b{font-size:24px}
+html.mobile .cb span{font-size:11px;line-height:1.1;text-align:center}
+html.mobile .cb em{font-size:9.5px;line-height:1.1}
+html.mobile #miniWrap{width:100px;height:94px;flex:none}
+html.mobile #mini{width:94px;height:94px}
+html.mobile #toasts{top:40px}
+html.mobile #toasts>*{font-size:13px;padding:6px 12px}
+html.mobile #objs{top:40px;left:max(6px,env(safe-area-inset-left));width:196px;font-size:11.5px;padding:6px 8px;pointer-events:auto}
+html.mobile #objs:not(.open) .o:not(.first){display:none}
+html.mobile #objs h4{margin-bottom:3px;font-size:10.5px}
+html.mobile #story{bottom:112px;max-width:62vw;padding:8px 12px}
+html.mobile #story span{font-size:13px}
+html.mobile #banner{top:14%}
+html.mobile #banner b{font-size:clamp(26px,6vw,44px);letter-spacing:4px}
+html.mobile .pz .pbox{padding:16px 16px;max-height:100%}
+html.mobile .pz .pkeys,html.mobile .pz .pcredit{display:none}
+html.mobile .pz .factbox{display:none}
+html.mobile .pz h1{font-size:34px}
+html.mobile #end .factbox,html.mobile #end .pcredit{display:none}
+html.mobile .pz .endbox h2{font-size:clamp(32px,7vw,54px)}
+html.mobile #brief .btext{font-size:15px}
+html.mobile #brief h1{font-size:30px;margin-bottom:8px}
+html.mobile .cmgrid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+html.mobile .cmcard{min-height:96px;padding:10px 12px}
+html.mobile .cmcard p{display:none}
+html.mobile .cmcard h3{font-size:18px}
+html.mobile #pbar{bottom:116px}
+html.mobile #tbar{bottom:112px;right:max(6px,env(safe-area-inset-right));flex-direction:column;flex-wrap:wrap-reverse;align-content:flex-start;max-height:calc(100vh - 160px);gap:5px}
+html.mobile #tbar button{width:42px;height:42px}
+@media (max-height:380px){html.mobile #panel{height:94px}html.mobile .cb{height:82px}html.mobile #tbar{bottom:102px}}
+
+/* duraklat / bitiş ekranı: tek bakışta sığsın */
+html.mobile .pz .pbox{padding:10px 16px}
+html.mobile .pz .phead{margin-bottom:8px;gap:12px}
+html.mobile .pz .phead .fl{height:34px}
+html.mobile .pz .phead small{font-size:10px;letter-spacing:4px}
+html.mobile .pstats{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:10px}
+html.mobile .pstats div{padding:5px 4px;border-radius:10px}
+html.mobile .pstats i{font-size:14px}html.mobile .pstats b{font-size:15px;margin:0}html.mobile .pstats span{font-size:9px;letter-spacing:1px}
+html.mobile .pz .pgrid{grid-template-columns:1fr}
+html.mobile .pz .pact{flex-direction:row;flex-wrap:wrap;gap:8px}
+html.mobile .pz .pact .mbtn{padding:12px 20px;font-size:16px;flex:1 1 100%;min-height:46px}
+html.mobile .pz .pact .prow{flex:1 1 40%}
+html.mobile .pz .pact .prow .mghost{padding:10px 6px;font-size:13px;min-height:44px}
+html.mobile .pz .pact .link{flex:1 1 100%;padding:8px}
+html.mobile .pz .endbox .pact{max-width:100%}
+
+/* kapatma düğmeleri her zaman erişilebilir (sağ üst) */
+html.mobile #camp [data-close],html.mobile #maps [data-close],html.mobile #saves [data-close],html.mobile #settings [data-close]{position:fixed;top:8px;right:max(10px,env(safe-area-inset-right));z-index:90;padding:9px 18px;font-size:14px;letter-spacing:1px;border-radius:22px;min-height:40px;background:#0b0d1cee}
+html.mobile #camp .pact,html.mobile #maps .pact,html.mobile #saves .pact,html.mobile #settings .pact{margin-top:6px!important}
+html.mobile #camp .pbox,html.mobile #maps .pbox,html.mobile #saves .pbox,html.mobile #settings .pbox{padding-top:40px}
+/* görev brifingi: yatay telefonda iki sütun, başlat düğmesi hep görünür */
+html.mobile #brief .pbox{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:auto auto 1fr;column-gap:22px;align-items:start;padding:12px 18px}
+html.mobile #brief .bdate{grid-column:1}html.mobile #brief h1{grid-column:1;font-size:26px;margin:0 0 6px}
+html.mobile #brief .btext{grid-column:1;grid-row:3;font-size:14px;line-height:1.5}
+html.mobile #brief .btext p{margin:0 0 8px}
+html.mobile #brief .bobj{grid-column:2;grid-row:1/3;margin:0;padding:10px 14px;font-size:13px}
+html.mobile #brief .bobj ul{margin:4px 0 0;padding-left:18px}
+html.mobile #brief .pact{grid-column:2;grid-row:3;margin-top:8px;flex-direction:column;align-items:stretch;gap:8px}
+html.mobile #brief .pact .mbtn{padding:14px;font-size:16px}
+@media (orientation:portrait){html.mobile #brief .pbox{display:block}}

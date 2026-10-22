@@ -52,7 +52,8 @@
     if (!g || !g.camp || !hudOn) { p.classList.add('hide'); return; }
     const m = C().missionOf(g), st = C().status(g);
     p.classList.remove('hide');
-    p.innerHTML = '<h4>' + esc(m.name) + '</h4>' + st.map(o => `<div class="o${o.done ? ' ok' : ''}"><i>${o.done ? '✔' : o.info ? '◆' : '○'}</i><span>${esc(o.text)}</span>${!o.done && !o.info && o.max > 1 && !o.time ? '<em>' + o.cur + '/' + o.max + '</em>' : ''}</div>`).join('');
+    const fi = st.findIndex(o => !o.done && !o.info);
+    p.innerHTML = '<h4>' + esc(m.name) + '</h4>' + st.map((o, i) => `<div class="o${o.done ? ' ok' : ''}${i === fi ? ' first' : ''}"><i>${o.done ? '✔' : o.info ? '◆' : '○'}</i><span>${esc(o.text)}</span>${!o.done && !o.info && o.max > 1 && !o.time ? '<em>' + o.cur + '/' + o.max + '</em>' : ''}</div>`).join('');
   }
   setInterval(refresh, 400);
 

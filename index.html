@@ -1,10 +1,17 @@
 <!doctype html>
 <html lang="tr">
 <head>
+<script>(function(){var d=document.documentElement,q=location.search,c=false;try{c=matchMedia("(pointer:coarse)").matches}catch(e){}var small=Math.min(screen.width,screen.height)<900;if(q.indexOf("mobile=1")>=0||(c&&small))d.classList.add("mobile");if(c||"ontouchstart" in window||q.indexOf("mobile=1")>=0)d.classList.add("touch")})()</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="Son İmparatorluk: Osmanlı ve Bizans'ın 4 çağlık, internetsiz, tarayıcıda oynanan gerçek zamanlı strateji oyunu. Kızıl Elma görevleriyle 1453 kuşatmasını yaşa.">
 <meta name="theme-color" content="#10140c">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Son İmparatorluk">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta property="og:title" content="Son İmparatorluk">
 <meta property="og:description" content="Osmanlı vs Bizans gerçek zamanlı strateji: 4 çağ, 10 görevlik Kızıl Elma hikâyesi. Tarayıcıda, ücretsiz.">
 <meta property="og:type" content="website">
@@ -116,7 +123,7 @@ h1{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;background:linea
 /* ---- dokunmatik / telefon ---- */
 canvas#map,#mini{touch-action:none}
 #tbar,#rot{display:none}
-body.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;right:8px;bottom:170px;z-index:8}
+html.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;right:8px;bottom:170px;z-index:8}
 #tbar button{width:46px;height:46px;border-radius:12px;border:1px solid #6a7a44;background:linear-gradient(#3a4527ee,#1c2412ee);color:#fff;font-size:19px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px #000a}
 #tbar button small{font-size:9px;margin-top:1px;color:#d9d2b0}
 #tbar button.on{border-color:var(--gold);background:linear-gradient(#6a5a1cee,#3a2e0cee)}
@@ -136,7 +143,6 @@ body.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;ri
   #miniWrap{width:104px;height:100px}#mini{width:100px;height:100px}
   #mute,#music,#pause{display:none}
   #cmds{overflow-y:auto;-webkit-overflow-scrolling:touch}
-  body.touch #tbar{bottom:118px;right:6px;flex-direction:column;flex-wrap:wrap-reverse;align-content:flex-start;max-height:calc(100vh - 160px)}
   #tbar button{width:38px;height:38px;font-size:15px}
   #objs{top:38px;left:6px;width:190px;font-size:11px;padding:6px 8px}
   #story{bottom:122px;max-width:60vw}#story span{font-size:13px}
@@ -146,6 +152,7 @@ body.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;ri
 <link rel="stylesheet" href="menu.css">
 <link rel="stylesheet" href="pause.css">
 <link rel="stylesheet" href="camp.css">
+<link rel="stylesheet" href="mobile.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -187,7 +194,7 @@ body.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;ri
   </div>
   <div id="toasts"></div>
   <div id="objs" class="hide"></div>
-  <div id="tbar"><button data-t="amove" title="Saldırarak ilerle">⚔<small>Saldır</small></button><button data-t="stop" title="Dur">⏹<small>Dur</small></button><button data-t="box" title="Kutu seçim">▭<small>Seç</small></button><button data-t="home" title="Şehir Merkezi">🏰<small>Şehir</small></button><button data-t="cancel" title="İptal">✖<small>İptal</small></button><button data-t="full" title="Tam ekran">⛶<small>Ekran</small></button></div>
+  <div id="tbar"><button data-t="amove" title="Saldırarak ilerle">⚔<small>Saldır</small></button><button data-t="stop" title="Dur">⏹<small>Dur</small></button><button data-t="box" title="Kutu seçim">▭<small>Seç</small></button><button data-t="army" title="Tüm ordu">🛡<small>Ordu</small></button><button data-t="home" title="Şehir Merkezi">🏰<small>Şehir</small></button><button data-t="cancel" title="İptal">✖<small>İptal</small></button><button data-t="full" title="Tam ekran">⛶<small>Ekran</small></button></div>
   <div id="rot"><div>📱<br>Telefonu <b>yatay</b> çevir</div></div>
   <div id="story" class="hide"><b></b><span></span></div>
   <div id="banner" class="hide"><b></b><span></span></div>
@@ -399,10 +406,8 @@ body.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;ri
 <script src="main.js"></script>
 <script src="ui.js"></script>
 <script src="camp-ui.js"></script>
+<script src="mobile.js"></script>
 <script src="facts.js"></script>
 <script src="menu.js"></script>
-<script>
-(function(){try{var coarse=matchMedia('(pointer:coarse)').matches&&!matchMedia('(pointer:fine)').matches;if(!coarse)return;var b=document.createElement('div');b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:999;padding:10px 14px;background:#e8c24a;color:#2a1a00;font:600 14px system-ui;text-align:center';b.textContent='Dokunmatik kontrol: dokun = seç/komut, sürükle = kaydır, iki parmak = yakınlaştır. Yatay tut. (Kapatmak için dokun)';b.onclick=function(){b.remove()};document.body.appendChild(b)}catch(e){}})();
-</script>
 </body>
 </html>
