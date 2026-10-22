@@ -1,0 +1,12 @@
+const Sim=require('../sim.js');let f=0;const ok=(c,m)=>{console.log(c?'✔':'✘',m);if(!c)f++;};
+const g=Sim.create({seed:5,difficulty:'normal'});const o=g.owners[0];const tc=g.ents.find(e=>e.owner===0&&e.type==='tc');
+o.res={f:1000,w:1000,g:1000,i:0};
+ok(!Sim.cmdSell(g,0,tc.id),'Şehir Merkezi satılamaz');
+const br=Sim.addBld(g,0,'barracks',tc.tx+5,tc.ty,true);br.queue.push({type:'inf',t:0});Sim.cmdTrain(g,br.id,'inf');
+const w0=o.res.w,f0=o.res.f;ok(Sim.cmdSell(g,0,br.id),'kışla satıldı');
+ok(br.dead&&o.res.w>=w0+72&&o.res.f>f0,'iade geldi (odun +'+(o.res.w-w0)+', yiyecek +'+(o.res.f-f0)+')');
+ok(!Sim.cmdSell(g,1,br.id),'ölü bina tekrar satılmaz');
+const e1=g.ents.find(e=>e.owner===1&&e.type==='tc');ok(!Sim.cmdSell(g,0,e1.id),'düşman binası satılamaz');
+const farm=Sim.addBld(g,0,'house',tc.tx-6,tc.ty,false);const w1=o.res.w;Sim.cmdSell(g,0,farm.id);ok(o.res.w-w1===30||o.res.w>w1,'yarım bina tam iade (+'+(o.res.w-w1)+')');
+for(let i=0;i<100;i++)Sim.update(g,0.05);ok(true,'satıştan sonra simülasyon çöktü mü: hayır');
+console.log(f?'BAŞARISIZ':'HEPSİ TAMAM');process.exit(f?1:0);

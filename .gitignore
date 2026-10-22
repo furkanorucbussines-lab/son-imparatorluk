@@ -1,0 +1,13 @@
+# test çıktıları ve yedekler
+test/*.png
+test/*.html
+test/*.bak*
+test/*.bak*.js
+test/*.bak*.html
+test/patch*.js
+test/part_*.txt
+*.bak
+node_modules/
+.env*
+*.keystore
+*.jks

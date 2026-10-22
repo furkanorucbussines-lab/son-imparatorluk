@@ -1,0 +1,44 @@
+// Kullanım: node test/shot.js <base|battle|bridge> <sim saniyesi> <çıktı.png> [seed]
+// Oyunu gizli Chrome'da açar, yapay zekâ ile ilerletir, ekran görüntüsü alır.
+const fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
+const [mode = 'base', secs = '240', out = 'shot.png', seed = '5'] = process.argv.slice(2);
+const root = path.join(__dirname, '..');
+let h = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+for (const f of ['flags.js', 'sim.js', 'sprite3d.js', 'render.js', 'bldart.js', 'bldart2.js', 'audio.js', 'main.js', 'ui.js', 'facts.js', 'menu.js']) h = h.replace(`src="${f}"`, `src="../${f}"`);
+h = h.replace('href="pause.css"', 'href="../pause.css"');
+h = h.replace('href="menu.css"', 'href="../menu.css"');
+const setup = `
+const L=m=>document.getElementById("o").textContent+=m+" | ";window.onerror=(m,s,l)=>L("ERR "+m+" @"+l);
+try{
+  document.getElementById("start").click();
+  const g=window.__game.g,S=window.__game.Sim; g.owners[0].ai=true;
+  for(let i=0;i<20*${secs};i++){S.update(g,0.05); if(i%40===0) g.events.length=0;}
+  g.events.length=0; g.owners[0].explored.fill(1);
+  const mil=g.ents.filter(e=>e.k==="u"&&e.type!=="villager");
+  let cx,cy;
+  if("${mode}"==="battle"){let best=-1;for(const u of mil){const n=mil.filter(v=>v.owner!==u.owner&&Math.hypot(v.x-u.x,v.y-u.y)<4).length;if(n>best){best=n;cx=u.x;cy=u.y;}} if(cx===undefined){cx=32;cy=32}}
+  else if("${mode}"==="tech"){const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");g.owners[0].ai=false;g.owners[0].age=2;g.owners[0].techs=["armor1","tools","blades"];g.owners[0].res={f:900,w:900,g:900,i:400};const ac=S.addBld(g,0,"academy",tc.tx+5,tc.ty+1,true);S.addBld(g,0,"fortress",tc.tx+9,tc.ty-1,true);S.addBld(g,0,"foundry",tc.tx+5,tc.ty+5,true);cx=tc.tx+9;cy=tc.ty+6;["mgun","mgun","musketeer","musketeer","musketeer","armored","armored","siege"].forEach((t,i)=>{const u=S.addUnit(g,0,t,tc.tx+11+(i%4)*1.3,tc.ty+6+(i/4|0)*1.5);u.face=0.3;});S.cmdResearch(g,ac.id,"armor2");window.__game.select([ac.id]);}
+  else if("${mode}"==="modern"){const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");g.owners[0].ai=false;g.owners[1].ai=false;g.owners[0].age=3;g.owners[0].res={f:900,w:900,g:900,i:900};cx=tc.tx+8;cy=tc.ty+5;S.addBld(g,0,"airfield",tc.tx+5,tc.ty+4,true);const sam=S.addBld(g,0,"sam",tc.tx+10,tc.ty+1,true);S.addBld(g,0,"radar",tc.tx+11,tc.ty+5,true);S.addBld(g,0,"foundry",tc.tx+5,tc.ty-1,true);["tank","tank","armored","mgun"].forEach((t,i)=>{const u=S.addUnit(g,0,t,tc.tx+3+i*1.4,tc.ty+8.5);u.face=0.2;});["heli","fighter","bomber","iha","siha"].forEach((t,i)=>{const u=S.addUnit(g,0,t,tc.tx+4+i*2.2,tc.ty+3+(i%2)*2);S.cmdMove(g,[u.id],tc.tx+14+i,tc.ty+4+(i%3)*2,false);});const foe=S.addUnit(g,1,"fighter",tc.tx+19,tc.ty+3);S.cmdMove(g,[foe.id],tc.tx+17,tc.ty+3,false);}
+  else if("${mode}".startsWith("bld")){const A=+"${mode}".slice(3)||0;const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");g.owners[0].ai=false;g.owners[1].ai=false;g.owners[0].age=A;g.owners[1].age=A;g.owners[0].explored.fill(1);g.owners[0].vis.fill(1);cx=tc.tx+8;cy=tc.ty+4;[["house",tc.tx+7,tc.ty-1],["barracks",tc.tx+7,tc.ty+2],["stable",tc.tx+11,tc.ty+2],["foundry",tc.tx+7,tc.ty+6],["academy",tc.tx+11,tc.ty+6],["tower",tc.tx+15,tc.ty+1],["fortress",tc.tx+15,tc.ty+4],["farm",tc.tx+10,tc.ty-1],["farm",tc.tx+11,tc.ty-1],["airfield",tc.tx+15,tc.ty+8],["sam",tc.tx+19,tc.ty+1],["radar",tc.tx+19,tc.ty+4]].forEach(([t,x,y])=>{try{S.addBld(g,0,t,x,y,true)}catch(e){}});window.__game.setZoom(56);}
+  else if(["night","storm","fogw","herow"].includes("${mode}")){const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");g.owners[0].ai=false;g.owners[1].ai=false;g.owners[0].explored.fill(1);cx=tc.tx+5;cy=tc.ty+5;const m="${mode}";
+    if(m!=="herow"){let found=null;for(let t=0;t<6000;t+=2){g.time=t;const e=S.envAt(g);if(m==="night"&&e.phase==="night"&&e.light<0.05&&e.weather==="clear"){found=t;break;}if(m==="storm"&&e.weather==="storm"&&e.ws>0.99&&e.light>0.9){found=t;break;}if(m==="fogw"&&e.weather==="fog"&&e.ws>0.99&&e.light>0.9){found=t;break;}}if(found!==null)g.time=found;else L("ortam bulunamadi");}
+    else{g.owners[0].age=1;const h0=S.addUnit(g,0,"hero",tc.tx+5,tc.ty+6);S.addUnit(g,0,"inf",tc.tx+6.5,tc.ty+6.3);S.addUnit(g,0,"archer",tc.tx+4,tc.ty+7);S.addUnit(g,0,"cav",tc.tx+6,tc.ty+7.5);g.owners[1].civ="bizans";const h1=S.addUnit(g,1,"hero",tc.tx+9,tc.ty+6);h1.face=3.14;window.__game.select([h0.id]);window.__game.setZoom(64);cx=tc.tx+7;cy=tc.ty+6.5;}
+    S.addBld(g,0,"house",tc.tx+6,tc.ty,true);S.addBld(g,0,"barracks",tc.tx+9,tc.ty+1,true);S.addBld(g,0,"tower",tc.tx+13,tc.ty+4,true);}
+  else if("${mode}"==="arsenal"){const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");g.owners[0].ai=false;g.owners[1].ai=false;g.owners[0].age=3;cx=tc.tx+8;cy=tc.ty+7;g.owners[0].explored.fill(1);g.owners[0].vis.fill(1);["sniper","rpg","demo","medic","ltank","tank","htank","howitzer","flak","armored"].forEach((t,i)=>{const u=S.addUnit(g,0,t,tc.tx+1.5+(i%5)*2.2,tc.ty+6.5+(i/5|0)*2.6);u.face=0.2;});const tw=S.addBld(g,0,"tower",tc.tx+14,tc.ty+4,true);const fo=S.addBld(g,0,"fortress",tc.tx+14,tc.ty+8,true);S.addUnit(g,1,"inf",tc.tx+19,tc.ty+5);S.addUnit(g,1,"inf",tc.tx+20,tc.ty+9);}
+  else if("${mode}"==="fight"){const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");cx=tc.tx+14;cy=tc.ty+8;const T=["inf","inf","archer","cav","inf","archer","siege","inf","dog","cav"];T.forEach((t,i)=>{S.addUnit(g,0,t,cx-2.5+(i%5)*0.6,cy+(i/5|0)*0.7);S.addUnit(g,1,T[(i+3)%10],cx+2.5-(i%5)*0.6,cy+(i/5|0)*0.7+0.2)});g.ents.filter(e=>e.k==="u"&&Math.abs(e.x-cx)<4&&Math.abs(e.y-cy)<4&&e.type!=="villager").forEach(u=>{u.order="amove";u.dest={x:cx+(u.owner?-3:3),y:cy};u.path=[{x:cx+(u.owner?-3:3),y:cy}];});g.owners[0].powerCd=0;S.cmdPower(g,0,cx+1.2,cy);}
+  else if("${mode}"==="bridge"){let b=g.ents.find(e=>e.type==="bridge");const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");cx=b?b.tx:tc.tx+14;cy=b?b.ty:tc.ty+10;}
+  else {const tc=g.ents.find(e=>e.owner===0&&e.type==="tc");cx=tc.tx+3;cy=tc.ty+5;}
+  if("${mode}"==="arsenal"){window.__game.setZoom(64);cx=g.ents.find(e=>e.owner===0&&e.type==="tc").tx+4.5;cy=g.ents.find(e=>e.owner===0&&e.type==="tc").ty+7.5;}
+  window.__game.centerOn(cx,cy);
+  if("${mode}"==="pause"){document.getElementById("pause").click();}
+  if("${mode}"==="pausetest"){document.getElementById("pause").click();const P=document.getElementById("pausePanel");const t0=P.querySelector(".ft").textContent;P.querySelector(".fnext").click();setTimeout(()=>{L("fact1="+t0.slice(0,25)+" fact2="+P.querySelector(".ft").textContent.slice(0,25));const m0=document.getElementById("mute").textContent;document.getElementById("pSnd").click();L("mute "+m0+"->"+document.getElementById("mute").textContent+" label="+document.getElementById("pSnd").textContent);document.getElementById("pMus").click();L("music label="+document.getElementById("pMus").textContent);const r=document.getElementById("pMus").getBoundingClientRect();const el=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);L("pMus top element="+(el&&(el.id||el.className)));const r2=P.querySelector(".fnext").getBoundingClientRect();const e2=document.elementFromPoint(r2.x+r2.width/2,r2.y+r2.height/2);L("fnext top element="+(e2&&(e2.id||e2.className)));},500);}
+  if("${mode}"==="savesscr"||"${mode}"==="settingsscr"){window.__game.save("1");document.getElementById("pause").click();document.querySelector("[data-open="+("${mode}"==="savesscr"?"saves":"settings")+"]").click();}
+  if("${mode}"==="mapsscr"){document.querySelector("[data-open=maps]").click();}
+  if("${mode}"==="endscr"){document.getElementById("endTitle").textContent="ZAFER!";document.getElementById("endTitle").className="win";document.getElementById("endText").textContent="Düşmanın Şehir Merkezi yıkıldı. Süre: 14 dk 20 sn.";document.getElementById("end").classList.remove("hide");}
+  L("t="+g.time.toFixed(0)+" mil="+mil.length+" @"+cx.toFixed(0)+","+cy.toFixed(0));
+}catch(e){L("CATCH "+e.message+" "+(e.stack||"").split(String.fromCharCode(10))[1]);}`;
+h = h.replace('</body>', `<pre id="o" style="position:fixed;top:40px;right:0;color:#0f0;background:#000a;font-size:12px;z-index:99"></pre><script>${setup}</script></body>`);
+const page = path.join(__dirname, `auto-${mode}.html`);
+fs.writeFileSync(page, h);
+const r = spawnSync('C:/Program Files/Google/Chrome/Application/chrome.exe', ['--headless=new', '--disable-gpu', '--allow-file-access-from-files', '--window-size=1300,780', ...(process.env.SHOT_SCALE ? ['--force-device-scale-factor=' + process.env.SHOT_SCALE] : []), '--virtual-time-budget=' + (mode === 'fight' ? 3300 : mode === 'modern' ? 2500 : 4000), `--screenshot=${path.resolve(out)}`, 'file:///' + page.replace(/\\/g, '/')], { timeout: 90000, encoding: 'utf8' });
+console.log(r.error ? 'HATA ' + r.error.message : 'tamam', fs.existsSync(out) ? out : '(dosya yok)');

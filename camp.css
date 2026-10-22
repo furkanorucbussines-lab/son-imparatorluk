@@ -1,0 +1,35 @@
+/* 1453 Kampanyası: görev seçimi, brifing, hedef paneli, hikâye kartı */
+#campBtn{border-color:#e8c24a88;color:#ffd66a;background:linear-gradient(#3a2f0acc,#1c1604cc)}
+#camp .pbox,#brief .pbox{width:min(1040px,95vw)}
+.cmgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.cmcard{position:relative;padding:18px 18px 16px;border:1px solid #ffffff2a;border-radius:14px;background:linear-gradient(#ffffff10,#ffffff04);cursor:pointer;transition:all .18s;min-height:190px;display:flex;flex-direction:column}
+.cmcard:hover{border-color:#e8c24a;transform:translateY(-3px);background:linear-gradient(#e8c24a1c,#ffffff06)}
+.cmcard .n{font:800 13px system-ui;letter-spacing:4px;color:#e8c24a}
+.cmcard h3{margin:4px 0 2px;font:700 22px "Palatino Linotype",Georgia,serif;color:#fff}
+.cmcard .d{font-size:13px;color:#c9c0a4;margin-bottom:8px}
+.cmcard p{margin:0;font-size:14px;line-height:1.45;color:#ddd3b4;flex:1}
+.cmcard .st{margin-top:10px;font-size:13px;font-weight:700;color:#8fd48f}
+.cmcard.lock{opacity:.5;cursor:not-allowed;filter:grayscale(.7)}
+.cmcard.lock:hover{transform:none;border-color:#ffffff2a;background:linear-gradient(#ffffff10,#ffffff04)}
+.cmcard.lock .st{color:#c9c0a4}
+.cmcard .tick{position:absolute;top:12px;right:14px;font-size:22px;color:#8fd48f}
+#brief .bdate{font-size:13px;letter-spacing:6px;color:#e8c24a;text-transform:uppercase}
+#brief h1{margin:2px 0 18px}
+#brief .btext{font:18px/1.6 Georgia,serif;color:#e8dfc3;max-width:760px}
+#brief .btext p{margin:0 0 14px}
+#brief .bobj{margin:18px 0 6px;padding:14px 18px;border-left:3px solid #e8c24a;background:#ffffff0a;border-radius:0 10px 10px 0;max-width:760px}
+#brief .bobj b{display:block;font-size:12px;letter-spacing:4px;color:#e8c24a;margin-bottom:6px}
+#brief .bobj li{margin:3px 0;color:#efe8d2}
+#brief .pact{flex-direction:row;justify-content:flex-start;margin-top:22px;align-items:center}
+#objs{position:absolute;top:50px;left:10px;width:270px;padding:10px 12px;background:linear-gradient(#10140acc,#07090499);border:1px solid #8a6d2488;border-radius:10px;color:#eee;font:13px/1.35 system-ui,sans-serif;pointer-events:none;z-index:6}
+#objs h4{margin:0 0 6px;font:700 12px system-ui;letter-spacing:3px;color:#e8c24a;text-transform:uppercase}
+#objs .o{display:flex;gap:7px;margin:4px 0;align-items:flex-start}
+#objs .o i{font-style:normal;width:16px;flex:none;text-align:center;color:#999}
+#objs .o.ok{color:#8fd48f;text-decoration:line-through;text-decoration-color:#8fd48f88}
+#objs .o.ok i{color:#8fd48f}
+#objs .o em{margin-left:auto;font-style:normal;color:#ffd66a;white-space:nowrap}
+#story{position:absolute;left:50%;bottom:210px;transform:translateX(-50%);max-width:min(620px,90vw);padding:12px 18px 13px;background:linear-gradient(#1a1608f0,#0a0803f0);border:1px solid #c9a23a;border-radius:12px;box-shadow:0 8px 30px #000b;pointer-events:none;z-index:7;transition:opacity .6s,transform .6s}
+#story.hide{opacity:0;transform:translate(-50%,14px)}
+#story b{display:block;font:700 12px system-ui;letter-spacing:4px;color:#e8c24a;text-transform:uppercase;margin-bottom:3px}
+#story span{font:italic 16px/1.45 Georgia,serif;color:#f1e8cc}
+@media(max-width:700px){#objs{width:200px;font-size:12px}#story{bottom:240px}}
