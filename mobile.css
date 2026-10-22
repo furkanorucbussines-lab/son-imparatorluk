@@ -109,7 +109,9 @@ html.mobile .pz .pact .link{flex:1 1 100%;padding:8px}
 html.mobile .pz .endbox .pact{max-width:100%}
 
 /* kapatma düğmeleri her zaman erişilebilir (sağ üst) */
-html.mobile #camp [data-close],html.mobile #maps [data-close],html.mobile #saves [data-close],html.mobile #settings [data-close]{position:fixed;top:8px;right:max(10px,env(safe-area-inset-right));z-index:90;padding:9px 18px;font-size:14px;letter-spacing:1px;border-radius:22px;min-height:40px;background:#0b0d1cee}
+html.mobile #camp [data-close],html.mobile #maps [data-close],html.mobile #saves [data-close],html.mobile #settings [data-close]{position:fixed;top:8px;right:max(10px,env(safe-area-inset-right));z-index:90;padding:9px 18px;font-size:14px;letter-spacing:1px;border-radius:22px;min-height:40px}
+html.mobile #camp .mghost[data-close],html.mobile #maps .mghost[data-close],html.mobile #saves .mghost[data-close],html.mobile #settings .mghost[data-close]{background:#0b0d1cee}
+html.mobile .mbtn[data-close]{box-shadow:0 3px 0 #6a4a08,0 6px 16px #000a}
 html.mobile #camp .pact,html.mobile #maps .pact,html.mobile #saves .pact,html.mobile #settings .pact{margin-top:6px!important}
 html.mobile #camp .pbox,html.mobile #maps .pbox,html.mobile #saves .pbox,html.mobile #settings .pbox{padding-top:40px}
 /* görev brifingi: yatay telefonda iki sütun, başlat düğmesi hep görünür */

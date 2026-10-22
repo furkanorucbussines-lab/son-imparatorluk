@@ -99,7 +99,7 @@
   const SINGLE = { cannon: 1, gun_cz: 1, gun_sks: 1, gun_mosin: 1, gun_shotty: 1 };
   const bufs = {}, norm = {}; let sampLoad = 0, sampReady = false;
   function groupFiles(g) { if (SINGLE[g]) return [g]; const n = g === 'clash' || g === 'swish' ? 10 : 5, o = []; for (let i = 0; i < n; i++) o.push(g + (n === 10 ? i + 1 : i)); return o; }
-  function sfile(n) { return 'audio/sfx/' + n + (n.indexOf('gun_') === 0 ? '.wav' : '.ogg'); }
+  function sfile(n) { return 'audio/sfx/' + n + '.wav'; }
   function loadSamples() {
     if (sampLoad || !ac || typeof fetch !== 'function') return; sampLoad = 1;
     fetch('audio/manifest.json').then(r => { if (!r.ok) throw new Error('manifest'); return r.json(); }).then(man => {
@@ -144,7 +144,8 @@
   for (const k in SM_SND) { const proc = snd[k]; snd[k] = () => { if (!playLayers(SM_SND[k], 1, 0)) proc(); }; }
 
   /* ---------- müzik: gerçek parçalar (CC0); yüklenemezse eski kodla üretilen müziğe düşer ---------- */
-  const MUS = { menu: ['audio/music/battle.mp3'], game: ['audio/music/war2.ogg', 'audio/music/battle.mp3'] };
+  const canOgg = (() => { try { return typeof Audio !== 'undefined' && !!new Audio().canPlayType('audio/ogg; codecs="vorbis"'); } catch (e) { return false; } })();
+  const MUS = { menu: ['audio/music/battle.mp3'], game: canOgg ? ['audio/music/war2.ogg', 'audio/music/battle.mp3'] : ['audio/music/battle.mp3'] }; // Safari ogg çalmaz: mp3'e düşer
   let mEl = null, mKind = '', mIdx = 0, mFail = false, mPend = false, mTimer = 0, mStopAfter = false, fbKind = null;
   const mTarget = () => muted || !musicOn ? 0 : (ducked ? 0.07 : 0.45) * vols.music;
   function mFade() {
