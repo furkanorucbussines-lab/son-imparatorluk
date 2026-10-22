@@ -1,3 +1,10 @@
+# Son İmparatorluk — nereden devam? (Cumartesi için not, 2026-10-22)
+
+**Yayında:** https://furkanorucbussines-lab.github.io/son-imparatorluk/ (repo furkanorucbussines-lab/son-imparatorluk; güncelleme = git push).
+**Bu oturumda:** Kızıl Elma 10 görev · sprite3d birim/hava çizimi · mobil arayüz + alay sistemi (yalnız telefonda) · PWA (manifest, sw.js, ikon) · gerçek CC0 müzik/ses (audio/, CREDITS.md) · test/cdp.js ile telefon emülasyonu (mob*.js testleri).
+**Cumartesi adayları:** gerçek telefonda geri bildirim (alay dağılması, sancak konumu, ses seviyeleri/eşleşmeleri) · alaylar arası asker taşıma · AI mimar/sur kullanımı · deniz savaşı · bina çizimleri sprite3d'ye · denge (Haliç/Surlar/Fetih).
+**Sağlık testi:** `node test/camp.js` · `node test/phaseb.js` · `node test/mob11.js` (alay, Chrome gerekir).
+
 # Son İmparatorluk — nereden devam? (güncel)
 
 **v16 (2026-10-22): yeni birim çizimi — sprite3d.js** (kapsül/elipsoid/kutu/disk'ten 'ilkel 3B' çizici; her karede yöne göre canlı çizim). Asker, okçu, tüfekçi, makineli, nişancı, bazuka, C4, sağlıkçı, casus, köylü, mimar, 5 süvari/komutan (at+binici), top, tüm araçlar/tanklar, köpek (K9 çoban köpeği + Husky; id'ye göre) bununla çiziliyor; hava birimleri eski çizimde. render.js drawUnit içinde `Spr.handles(type)` ise Spr.unit çağrılır. Vitrin: `node test/sprshow.js inf,tank,dog osmanli out.png [zoom]`. Kampanya adı: Kızıl Elma (kampanya kelimesi arayüzden kalktı). Görev zorluğu artan: Edirne(kolay,pasif) < Rumeli(normal akın) < Haliç(normal AI+kuleler) < Surlar(zor AI, 3 çıkış) < Fetih(yeni 'usta' zorluk, 25 dk, 4 büyük akın). Sıradaki: hava birimlerini de sprite3d'ye geçir, bina çizimlerini iyileştir, görsel cila (Spr kalitesi).
