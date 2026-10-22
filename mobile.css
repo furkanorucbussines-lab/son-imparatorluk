@@ -124,3 +124,16 @@ html.mobile #brief .bobj ul{margin:4px 0 0;padding-left:18px}
 html.mobile #brief .pact{grid-column:2;grid-row:3;margin-top:8px;flex-direction:column;align-items:stretch;gap:8px}
 html.mobile #brief .pact .mbtn{padding:14px;font-size:16px}
 @media (orientation:portrait){html.mobile #brief .pbox{display:block}}
+
+/* alaylar (yalnız telefon): sağda 1-5 numaralı birlik düğmeleri; tek dokunuşla seç, haritaya dokun = saldırarak yürü */
+#sq{display:none}
+html.mobile #sq{display:flex;flex-direction:column;gap:6px;position:absolute;right:calc(max(6px,env(safe-area-inset-right)) + 54px);bottom:112px;z-index:8}
+html.mobile #tbar [data-t=box],html.mobile #tbar [data-t=army],html.mobile #tbar [data-t=amove]{display:none}
+html.mobile #tbar{max-height:calc(100vh - 150px)}
+.sqb{position:relative;width:58px;height:52px;border-radius:12px;border:2px solid #6a7a44;background:linear-gradient(#3a4527ee,#1a2111ee);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 8px #000a}
+.sqb.on{border-color:#ffd86a;background:linear-gradient(#6a5a1cee,#3a2e0cee);box-shadow:0 0 14px #e8c24a88}
+.sqb i{position:absolute;top:2px;left:5px;font-style:normal;font-size:11px;font-weight:800;color:#ffd66a}
+.sqb span{font-size:15px;line-height:1;margin-top:3px}
+.sqb b{font-size:15px;line-height:1.1}
+.sqb u{position:absolute;left:6px;right:6px;bottom:4px;height:4px;background:#0009;border-radius:2px}
+.sqb u s{display:block;height:100%;background:#58c878;border-radius:2px}

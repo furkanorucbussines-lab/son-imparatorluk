@@ -33,10 +33,11 @@
   help.innerHTML = `<div class="card"><h2>Dokunmatik kontroller</h2><ul>
     <li><b>Dokun</b> bir birime/binaya: seçer. Seçili askerler varken <b>boş yere, düşmana veya kaynağa dokun</b>: gider, saldırır ya da toplar.</li>
     <li><b>Sürükle</b>: haritayı kaydırır. <b>İki parmak</b>: yakınlaştır/uzaklaştır.</li>
-    <li><b>Basılı tut</b> bir askere: ekrandaki aynı türden hepsini seçer. <b>Çift dokun</b> da aynısını yapar.</li>
-    <li>Sağdaki düğmeler: <b>⚔ Saldır</b> (saldırarak ilerle), <b>⏹ Dur</b>, <b>▭ Seç</b> (kutu çizerek seç), <b>🛡 Ordu</b> (tüm askerleri seç), <b>🏰 Şehir</b>.</li>
+    <li><b>Ordu alaylara gömülür:</b> eğittiğin askerler otomatik olarak en fazla 5 alaya (piyade, menzilli, süvari, ağır, hava) katılır. Sağdaki <b>1-5 düğmeleri</b> alayları seçer; ikinci dokunuş kamerayı alaya götürür. Sancaktaki sayı asker adedidir.</li>
+    <li><b>Tek komut:</b> alay seçiliyken haritaya dokun: bütün alay <b>saldırarak</b> yürür. Düşman birliğine/binasına dokun: hepsi ona saldırır. <b>⏹ Dur</b> durdurur.</li>
+    <li>Üretim binasını seçince <b>×1 → ×5 → ×10</b> düğmesiyle toplu asker eğitirsin; <b>📍 Toplanma noktası</b> yeni askerlerin gideceği yeri belirler.</li>
     <li>Bina kurmak için köylü seç, alttaki listeden bir bina seç, <b>parmağınla yerini ayarla</b> ve <b>✓ İnşa et</b>'e dokun. Sur için parmağını sürükle.</li>
-    <li>Kışla/Ahır gibi üretim binasını seçince <b>📍 Toplanma noktası</b>: yeni birimlerin gideceği yeri belirler.</li>
+    
     <li>Alttaki düğme sırasını <b>sağa-sola kaydırarak</b> tüm seçenekleri görürsün. Köşedeki mini haritaya dokunarak oraya gidersin.</li>
     <li>İpucu: oyunu <b>yatay</b> tut. Tarayıcı menüsünde "Ana ekrana ekle" dersen tam ekran ve çevrimdışı açılır.</li></ul>
     <button id="mhelpX">Tamam</button></div>`;

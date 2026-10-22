@@ -763,7 +763,7 @@ function cmdPower(g, owner, x, y) {
 
 /* ---------- birim yapay zekâsı ---------- */
 function follow(g, u, dt) {
-  let budget = u.st.speed * (u.disguised ? 0.7 : 1) * (u.cryUntil > GT ? 1.25 : 1) * dt;
+  let budget = Math.min(u.st.speed, u.cap || 99) * (u.disguised ? 0.7 : 1) * (u.cryUntil > GT ? 1.25 : 1) * dt;
   while (budget > 1e-6 && u.path.length) {
     const w = u.path[0], dx = w.x - u.x, dy = w.y - u.y, d = Math.hypot(dx, dy);
     if (d <= budget) { if (!tryMove(g, u, w.x, w.y)) { u.path.shift(); return u.path.length > 0; } budget -= d; u.path.shift(); }
@@ -781,7 +781,7 @@ function tryMove(g, u, nx, ny) {
 }
 function directStep(g, u, px, py, dt) {
   const dx = px - u.x, dy = py - u.y, d = Math.hypot(dx, dy); if (d < 1e-6) return;
-  const s = Math.min(d, u.st.speed * dt); u.face = Math.atan2(dy, dx);
+  const s = Math.min(d, Math.min(u.st.speed, u.cap || 99) * dt); u.face = Math.atan2(dy, dx);
   tryMove(g, u, u.x + dx / d * s, u.y + dy / d * s);
 }
 function inReach(u, t, reach) { return rectDist(rectOf(u), rectOf(t)) <= reach; }

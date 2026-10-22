@@ -15,7 +15,7 @@ Osmanlı ve Bizans'ın karşı karşıya geldiği, **tarayıcıda oynanan gerçe
 Fare: sol tık seç, sağ tık emir · `A` saldırarak ilerle · `S` dur · `H` şehir merkezi · `.` boştaki köylü · `P`/`Esc` duraklat · `Ctrl+1-9` grup · `Del` binayı sat
 
 ## Telefon / tablet
-Yatay tutarak oyna. Dokun = seç ya da komut ver, sürükle = haritayı kaydır, iki parmak = yakınlaştır, basılı tut = aynı türden hepsini seç. Sağdaki düğmeler: Saldır, Dur, Kutu seç, Şehir, İptal, Tam ekran.
+Telefonda oyun "alay" düzeniyle oynanır (Rise of Kingdoms tarzı): askerler en fazla 5 alaya gömülür, sağdaki 1-5 düğmeleriyle seçilir ve haritaya tek dokunuşla saldırıya gönderilir. Toplu üretim (×1/×5/×10), toplanma noktası, iki parmakla yakınlaştırma ve sürükleyerek kaydırma var. Bilgisayarda oyun eskisi gibi tek tek birim kontrolüyle oynanır.
 
 ## Yerelde çalıştırma
 `index.html` dosyasını tarayıcıda aç. Testler: `node test/camp.js`, `node test/headless.js 7 normal 900`.

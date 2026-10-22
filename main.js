@@ -157,7 +157,8 @@ function rightClick() {
   else if (e && e.k === 'b' && e.owner === ME && e.done && e.hp < e.maxhp && !BLD[e.type].farm && builders.length) Sim.cmdRepair(g, builders, e.id);
   else if (e && e.k === 'b' && e.owner === ME && BLD[e.type].farm && vil.length) Sim.cmdGather(g, vil, e.id);
   else if (e && e.k === 'b' && e.owner === ME && BLD[e.type].drop && vil.some(v => g.byId.get(v).carry > 0)) Sim.cmdReturn(g, vil);
-  else Sim.cmdMove(g, ids, mouse.wx, mouse.wy, false);
+  else Sim.cmdMove(g, ids, mouse.wx, mouse.wy, MOBILE && units.every(isSoldier));
+  if (MOBILE) applyCap(units);
   g.fx.push({ t: e && e.owner >= 0 && e.owner !== ME ? 'hit' : 'place', x: mouse.wx, y: mouse.wy, life: 0.35, max: 0.35 }); snd.cmd();
 }
 let wallDrag = null;
@@ -238,6 +239,7 @@ function updatePanel() {
       info = `<div class="nm">${d.name}${e.owner === ME ? '' : ' (düşman)'}</div><div class="st">❤ ${Math.ceil(e.hp)}/${e.maxhp}${e.done ? '' : ' &nbsp; 🔨 %' + Math.floor(e.progress * 100)}${d.pop && e.done ? ' &nbsp; 👥 +' + d.pop : ''}</div>`;
       progInfo = null;
       if (e.owner === ME && e.done && d.train) {
+        if (MOBILE) cmds += `<button class="cb" data-act="qty"><b>×${trainQty}</b><span>Toplu üretim</span><em>dokun: 1 → 5 → 10</em></button>`;
         cmds += `<button class="cb" data-act="rally"><b>📍</b><span>Toplanma noktası</span><em>sonra haritaya dokun</em></button>`;
         cmds += d.train.map((t, i) => { const st = Sim.unitStats(g, ME, t), lk = (UNIT[t].age || 0) > me.age; return `<button class="cb ${lk ? 'lock' : aff(UNIT[t].cost) ? '' : 'dis'}" data-act="train" data-t="${t}"><i>${KEYS[i]}</i><b>${UICON[t]}</b><span>${uname(ME, t)}</span><em>${lk ? lockTxt(UNIT[t].age) : costStr(UNIT[t].cost) + ' · ' + Math.round(st.time) + 'sn'}</em></button>`; }).join('');
         if (e.type === 'tc') {
@@ -284,13 +286,14 @@ $('panel').addEventListener('click', ev => {
   const act = b.dataset.act, s = selected();
   if (act === 'place') { if (IS_TOUCH && !(BLD[b.dataset.t].age > g.owners[ME].age)) toast('Haritaya dokunup yerini ayarla, sonra ✓ İnşa et', 2600); if ((BLD[b.dataset.t].age || 0) > g.owners[ME].age) { snd.err(); toast(BLD[b.dataset.t].name + ' için ' + Sim.AGES[BLD[b.dataset.t].age].name + ' gerekli!', 1800); } else if (Sim.canAfford(g.owners[ME], BLD[b.dataset.t].cost)) { mode = { k: 'place', type: b.dataset.t }; snd.click(); } else { snd.err(); toast('Kaynak yetersiz!', 1200); } }
   else if (act === 'amove') { mode = { k: 'amove' }; snd.click(); }
+  else if (act === 'qty') { trainQty = trainQty === 1 ? 5 : trainQty === 5 ? 10 : 1; snd.click(); }
   else if (act === 'rally') { mode = { k: 'rally' }; snd.click(); toast('Üretilen birimlerin gideceği yere ' + (IS_TOUCH ? 'dokun' : 'tıkla'), 2200); }
   else if (act === 'herocry') { if (Sim.cmdHeroCry(g, ME)) snd.cry(); else snd.err(); }
   else if (act === 'disguise') { if (Sim.cmdDisguise(g, sel)) snd.click(); }
   else if (act === 'spymode') { mode = { k: 'spy', kind: b.dataset.k }; snd.click(); }
   else if (act === 'sell') trySell();
   else if (act === 'stop') { Sim.cmdStop(g, sel); snd.click(); }
-  else if (act === 'train') { const bs = s.filter(x => x.k === 'b' && x.owner === ME); let ok = false; const n = ev.shiftKey ? 5 : 1; for (let i = 0; i < n; i++) ok = Sim.cmdTrain(g, bs[0].id, b.dataset.t) || ok; if (ok) snd.click(); else snd.err(); }
+  else if (act === 'train') { const bs = s.filter(x => x.k === 'b' && x.owner === ME); let ok = false; const n = ev.shiftKey ? 5 : MOBILE ? trainQty : 1; for (let i = 0; i < n; i++) ok = Sim.cmdTrain(g, bs[0].id, b.dataset.t) || ok; if (ok) snd.click(); else snd.err(); }
   else if (act === 'selworkers') { const ids = g.ents.filter(u => !u.dead && u.k === 'u' && u.order === 'gather' && u.target === s[0].id && u.owner === ME).map(u => u.id); if (ids.length) setSel(ids); }
   else if (act === 'ageup') { if (Sim.cmdAgeUp(g, ME)) snd.click(); else snd.err(); }
   else if (act === 'research') { if (Sim.cmdResearch(g, s[0].id, b.dataset.t)) snd.click(); else snd.err(); }
@@ -450,7 +453,9 @@ function touchPick(wx, wy) { for (const [ox, oy] of RING) { const e = entityAt(w
 function tapAt(x, y) {
   tSetMouse(x, y);
   if (mode) { synthClick(x, y); return; }
+  if (MOBILE) { const k = squadAtScreen(x, y); if (k) { selectSquad(k); return; } }
   const e = touchPick(mouse.wx, mouse.wy), mine = myUnits(selected());
+  if (MOBILE && e && e.k === 'u' && e.owner === ME && e.squad) { selectSquad(e.squad); return; }
   if (e && (e.k === 'u' || e.k === 'b')) { const c = Sim.centerOf(e); mouse.wx = e.k === 'u' ? e.x : c.x; mouse.wy = e.k === 'u' ? e.y : c.y; }
   if (e && e.k === 'u' && e.owner === ME) { synthClick(x, y); return; }
   if (mine.length && !boxMode) {
@@ -512,6 +517,47 @@ cv.addEventListener('pointerup', tEnd); cv.addEventListener('pointercancel', tEn
 mini.addEventListener('pointerdown', ev => { if (ev.pointerType === 'mouse' || !g) return; ev.preventDefault(); const r = mini.getBoundingClientRect(); centerOn((ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H); mini._tdrag = true; try { mini.setPointerCapture(ev.pointerId); } catch (e) { /* yok */ } }, { passive: false });
 mini.addEventListener('pointermove', ev => { if (ev.pointerType === 'mouse' || !mini._tdrag) return; const r = mini.getBoundingClientRect(); centerOn((ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H); });
 mini.addEventListener('pointerup', () => { mini._tdrag = false; });
+
+/* ---------- mobil: alaylar (çok asker 5 birliğe gömülür, tek komutla yürür) ---------- */
+const SQ_MAX = 5, SQ_CAP = 40, SQ_SKIP = { villager: 1, engineer: 1, spy: 1, dog: 1, demo: 1, iha: 1 };
+let sqT = 0, trainQty = 1;
+const SQ_CAT = { inf: 'p', medic: 'p', archer: 'r', musketeer: 'r', mgun: 'r', sniper: 'r', rpg: 'r', cav: 'm', hcav: 'm', harcher: 'm', dragoon: 'm', hero: 'm', siege: 'h', howitzer: 'h', tank: 'h', ltank: 'h', htank: 'h', armored: 'h', scout: 'h', raider: 'h', flak: 'h', heli: 'a', fighter: 'a', bomber: 'a', siha: 'a' };
+const sqCat = e => SQ_CAT[e.type] || 'p';
+const isSoldier = e => e.k === 'u' && !e.dead && e.owner === ME && !SQ_SKIP[e.type];
+function squadsNow() {
+  const m = {}; for (const e of g.ents) if (e.squad && isSoldier(e)) (m[e.squad] = m[e.squad] || []).push(e);
+  for (const k in m) { let x = 0, y = 0, hp = 0, mh = 0; for (const e of m[k]) { x += e.x; y += e.y; hp += e.hp; mh += e.maxhp; } m[k].cx = x / m[k].length; m[k].cy = y / m[k].length; m[k].hp = hp / mh; }
+  return m;
+}
+function selSquadNo() { const s = selected().filter(isSoldier); if (!s.length) return 0; const k = s[0].squad; return k && s.every(e => e.squad === k) ? k : 0; }
+function squadTick(dt) {
+  sqT -= dt; if (sqT > 0 || !g) return; sqT = 0.4;
+  let m = squadsNow(), fresh = false;
+  for (const e of g.ents) {
+    if (e.squad || !isSoldier(e)) continue;
+    let best = 0, bd = 1e9; const cat = sqCat(e);
+    for (let k = 1; k <= SQ_MAX; k++) { const a = m[k]; if (a && a.length < SQ_CAP && sqCat(a[0]) === cat) { const d = Math.hypot(a.cx - e.x, a.cy - e.y); if (d < bd) { bd = d; best = k; } } }   // önce aynı sınıftan alay (piyade/menzilli/süvari/ağır/hava)
+    if (!best) { for (let k = 1; k <= SQ_MAX; k++) if (!m[k]) { best = k; break; } }
+    if (!best) { bd = 1e9; for (let k = 1; k <= SQ_MAX; k++) { const a = m[k]; if (a && a.length < SQ_CAP) { const d = Math.hypot(a.cx - e.x, a.cy - e.y); if (d < bd) { bd = d; best = k; } } } }
+    if (!best) { let bn = 1e9; for (let k = 1; k <= SQ_MAX; k++) if (m[k] && m[k].length < bn) { bn = m[k].length; best = k; } }
+    e.squad = best; fresh = true;
+    if (!m[best]) { m[best] = [e]; m[best].cx = e.x; m[best].cy = e.y; m[best].hp = 1; } else { m[best].push(e); if (e.order === 'idle' && bd > 7 && bd < 1e8) Sim.cmdMove(g, [e.id], m[best].cx, m[best].cy, false); }
+  }
+  if (fresh) m = squadsNow();
+  const box = $('sq'); if (!box) return;
+  const cur = selSquadNo(); let h = '';
+  for (let k = 1; k <= SQ_MAX; k++) { const a = m[k]; if (!a || !a.length) continue; const cnt = {}; a.forEach(e => cnt[e.type] = (cnt[e.type] || 0) + 1); const top = Object.keys(cnt).sort((p, q) => cnt[q] - cnt[p]).slice(0, 2).map(t => UICON[t] || '⚔').join('');
+    h += `<button class="sqb${cur === k ? ' on' : ''}" data-sq="${k}"><i>${k}</i><span>${top}</span><b>${a.length}</b><u><s style="width:${Math.round(a.hp * 100)}%"></s></u></button>`; }
+  if (box._h !== h) { box._h = h; box.innerHTML = h; }
+}
+function selectSquad(k) { const m = squadsNow(); if (!m[k]) return; const same = selSquadNo() === k; setSel(m[k].map(e => e.id)); if (same) centerOn(m[k].cx, m[k].cy); }
+function squadAtScreen(x, y) { const m = squadsNow(); for (const k in m) { const sx0 = (m[k].cx - cam.x) * ts, sy0 = (m[k].cy - cam.y) * ts - ts * 1.5; if (Math.hypot(x - sx0, y - sy0) < 34) return +k; } return 0; }
+function applyCap(units) { // alay yürüyüşü en yavaş birimin hızıyla: dizilim dağılmasın
+  const ground = units.filter(u => !u.st.air && isSoldier(u)); if (ground.length < 2) { units.forEach(u => { u.cap = 0; }); return; }
+  const cap = Math.min(...ground.map(u => u.st.speed)); units.forEach(u => { u.cap = u.st.air ? 0 : cap; });
+}
+const sqBox = $('sq'); if (sqBox) sqBox.addEventListener('click', ev => { const b = ev.target.closest('[data-sq]'); if (b && g && running) selectSquad(+b.dataset.sq); });
+
 // mobil araç çubuğu
 const tb = $('tbar');
 if (tb) tb.addEventListener('click', ev => {
@@ -558,6 +604,7 @@ function frame(now) {
       let n = 0; while (acc >= 0.05 && n++ < 12) { Sim.update(g, 0.05); acc -= 0.05; }
       if (n >= 12) acc = 0;
       if (g.camp && window.Campaign) Campaign.tick(g);
+      if (MOBILE) squadTick(0.05 * n);
       handleEvents();
     }
     if (g.time - lastAuto >= 60 && g.winner < 0 && !paused) { lastAuto = g.time; if (saveGame('auto')) { const a = $('autoDot'); if (a) { a.classList.add('on'); setTimeout(() => a.classList.remove('on'), 1500); } } }
@@ -567,7 +614,7 @@ function frame(now) {
   }
   if (g) {
     const nowp = performance.now(); pings = pings.filter(p => nowp - p.t < 3000);
-    Render.draw(ctx, { g, ME, cam, ts, vw, vh, dpr, labels: settings.labels, sel, mode, mouse, wallTiles: wallDrag ? wallTiles() : null, drag, pings, time: nowp / 1000, power: CIVS[g.owners[ME].civ].power }, running && !paused ? dt : 0);
+    Render.draw(ctx, { squadMode: MOBILE, squadSel: MOBILE ? selSquadNo() : 0, g, ME, cam, ts, vw, vh, dpr, labels: settings.labels, sel, mode, mouse, wallTiles: wallDrag ? wallTiles() : null, drag, pings, time: nowp / 1000, power: CIVS[g.owners[ME].civ].power }, running && !paused ? dt : 0);
     drawMini();
   }
   cv.style.cursor = mode && mode.k === 'amove' ? 'crosshair' : mode && (mode.k === 'power' || mode.k === 'spy') ? 'crosshair' : 'default';

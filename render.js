@@ -740,7 +740,7 @@ function drawUnit(c, V, u, dt) {
   if (u.type === 'hero') { const px0 = x, py0 = y - lift - r * 1.5; c.strokeStyle = '#5a4020'; c.lineWidth = 2; c.beginPath(); c.moveTo(px0, py0 + r * 1.35); c.lineTo(px0, py0 - r * 1.2); c.stroke(); circ(c, px0, py0 - r * 1.2, 3, '#e8c24a'); const fi = window.Flags && Flags.img[civ]; if (fi && fi.complete && fi.naturalWidth) { const fw = r * 2.1, fh = fw * 0.66, N = 8; for (let i = 0; i < N; i++) { const k = i / N, off = Math.sin(t * 5 + i * 0.8 + u.id) * fh * 0.08 * k; c.drawImage(fi, i * fi.naturalWidth / N, 0, fi.naturalWidth / N + 0.5, fi.naturalHeight, px0 + fw * k, py0 - r * 1.2 + off, fw / N + 0.6, fh); } c.fillStyle = col; c.fillRect(px0, py0 - r * 1.2, fw, 2); c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 0.8; c.strokeRect(px0, py0 - r * 1.2, fw, fh); } }
   if (u.guard && u.type === 'villager') { c.save(); c.strokeStyle = `rgba(255,220,90,${0.55 + Math.sin(t * 4) * 0.25})`; c.lineWidth = 2; c.beginPath(); c.arc(x, y - lift, r * 1.5 + Math.sin(t * 3) * 1.5, 0, 6.283); c.stroke(); c.globalCompositeOperation = 'lighter'; circ(c, x, y - lift, r * 1.1, 'rgba(255,210,80,.18)'); c.restore(); c.font = Math.round(r * 1.2) + 'px sans-serif'; c.textAlign = 'center'; c.fillText('🛡', x, y - lift - r * 1.9); }
   if (u.disguised && u.owner === V.ME) { c.font = Math.round(r * 1.3) + 'px sans-serif'; c.textAlign = 'center'; c.fillText('🎭', x, y - lift - r * 1.0); }
-  if (V.selSet.has(u.id) || u.hp < u.maxhp) hpBar(c, x, y - lift - r * 1.55 - 3, Math.max(15, r * 2.3), u.hp / u.maxhp);
+  if (!(V.squadMode && u.squad && u.owner === V.ME) && (V.selSet.has(u.id) || u.hp < u.maxhp)) hpBar(c, x, y - lift - r * 1.55 - 3, Math.max(15, r * 2.3), u.hp / u.maxhp);
 }
 
 /* ---------- efektler (çizim) ---------- */
@@ -891,9 +891,34 @@ function drawWeather(c, V, dt) {
   c.restore();
 }
 
+/* ---------- mobil alaylar: çok asker 6 temsilciyle çizilir, üstüne sancak ---------- */
+function squadPrep(V) {
+  V.squadReps = new Set(); V.squadsInfo = {}; if (!V.squadMode) return;
+  const m = {}; for (const e of V.g.ents) { if (e.dead || e.k !== 'u' || e.owner !== V.ME || !e.squad) continue; (m[e.squad] = m[e.squad] || []).push(e); }
+  for (const k in m) {
+    const a = m[k].sort((p, q) => p.id - q.id); let cx = 0, cy = 0, hp = 0, mh = 0; for (const e of a) { cx += e.x; cy += e.y; hp += e.hp; mh += e.maxhp; }
+    V.squadsInfo[k] = { n: a.length, x: cx / a.length, y: cy / a.length, hp: hp / mh };
+    for (let i = 0; i < Math.min(6, a.length); i++) V.squadReps.add(a[i].id);
+  }
+}
+function drawSquadBanners(c, V) {
+  if (!V.squadMode) return;
+  for (const k in V.squadsInfo) {
+    const s = V.squadsInfo[k], x = (s.x - V.cam.x) * V.ts, y = (s.y - V.cam.y) * V.ts, sel = V.squadSel === +k, by = y - V.ts * 1.5, col = TEAM[V.ME];
+    if (x < -60 || y < -60 || x > V.vw + 60 || y > V.vh + 120) continue;
+    c.save();
+    if (sel) { c.strokeStyle = 'rgba(255,214,90,.9)'; c.lineWidth = 2.5; c.setLineDash([9, 7]); c.lineDashOffset = -V.time * 24; c.beginPath(); c.ellipse(x, y + V.ts * 0.2, V.ts * 1.7, V.ts * 1.1, 0, 0, 6.283); c.stroke(); c.setLineDash([]); }
+    c.strokeStyle = '#3a2a10'; c.lineWidth = 3; c.beginPath(); c.moveTo(x, by + 22); c.lineTo(x, y - V.ts * 0.6); c.stroke();
+    const w = 44, h = 28; c.fillStyle = col; c.strokeStyle = sel ? '#ffd86a' : '#10100a'; c.lineWidth = sel ? 3 : 2; c.beginPath(); c.moveTo(x - w / 2, by - h / 2); c.lineTo(x + w / 2, by - h / 2); c.lineTo(x + w / 2, by + h / 2 - 4); c.lineTo(x, by + h / 2 + 6); c.lineTo(x - w / 2, by + h / 2 - 4); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '800 15px system-ui'; c.fillText(String(s.n), x, by - 1);
+    c.font = '700 10px system-ui'; c.fillStyle = '#ffe9a8'; c.fillText(String(k), x - w / 2 + 7, by - h / 2 + 7);
+    const bw = 46; c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(x - bw / 2, by + h / 2 + 8, bw, 5); c.fillStyle = s.hp > 0.5 ? '#58c878' : s.hp > 0.25 ? '#e0b030' : '#e05040'; c.fillRect(x - bw / 2 + 1, by + h / 2 + 9, (bw - 2) * Math.max(0, Math.min(1, s.hp)), 3);
+    c.restore();
+  }
+}
 function draw(c, V, dt) {
   const g = V.g, ts = V.ts, cam = V.cam, ME = V.ME, me = g.owners[ME];
-  V.selSet = new Set(V.sel);
+  V.selSet = new Set(V.sel); squadPrep(V);
   cloudT += dt;
   shake = Math.max(0, shake - dt * 2.8);
   c.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
@@ -959,7 +984,7 @@ function draw(c, V, dt) {
   }
   list.sort((a, b) => a[0] - b[0]);
   const pulse = 1 + 0.06 * Math.sin(V.time * 6);
-  for (const [, e] of list) if (V.selSet.has(e.id)) {
+  for (const [, e] of list) if (V.selSet.has(e.id) && !(V.squadMode && e.squad && e.owner === ME)) {
     if (e.k === 'u') {
       const rr = e.st.r * ts;
       c.strokeStyle = e.owner === ME ? 'rgba(120,255,150,.95)' : 'rgba(255,207,92,.95)'; c.lineWidth = 2;
@@ -975,13 +1000,14 @@ function draw(c, V, dt) {
   for (const [, e] of list) {
     if (e.k === 'r') { drawRes(c, V, e); if (workers[e.id]) drawBadge(c, V, e, workers[e.id]); }
     else if (e.k === 'b') { drawBld(c, V, e); if (workers[e.id]) drawBadge(c, V, e, workers[e.id]); }
-    else drawUnit(c, V, e, dt);
+    else if (!(V.squadMode && e.squad && e.owner === ME && !V.squadReps.has(e.id))) drawUnit(c, V, e, dt);
   }
   air.sort((a, b) => a.y - b.y);
   for (const e of air) {
-    if (V.selSet.has(e.id)) { const rr = e.st.r * ts, lift = (e.st.alt || 1) * ts; c.strokeStyle = 'rgba(120,255,150,.9)'; c.lineWidth = 2; c.beginPath(); c.ellipse(sx(e.x), sy(e.y) + rr * 0.4, rr * 1.2 * pulse, rr * 0.7 * pulse, 0, 0, 6.283); c.stroke(); c.setLineDash([3, 4]); c.beginPath(); c.moveTo(sx(e.x), sy(e.y) + rr * 0.2); c.lineTo(sx(e.x), sy(e.y) - lift); c.stroke(); c.setLineDash([]); }
-    drawUnit(c, V, e, dt);
+    if (V.selSet.has(e.id) && !(V.squadMode && e.squad && e.owner === ME)) { const rr = e.st.r * ts, lift = (e.st.alt || 1) * ts; c.strokeStyle = 'rgba(120,255,150,.9)'; c.lineWidth = 2; c.beginPath(); c.ellipse(sx(e.x), sy(e.y) + rr * 0.4, rr * 1.2 * pulse, rr * 0.7 * pulse, 0, 0, 6.283); c.stroke(); c.setLineDash([3, 4]); c.beginPath(); c.moveTo(sx(e.x), sy(e.y) + rr * 0.2); c.lineTo(sx(e.x), sy(e.y) - lift); c.stroke(); c.setLineDash([]); }
+    if (!(V.squadMode && e.squad && e.owner === ME && !V.squadReps.has(e.id))) drawUnit(c, V, e, dt);
   }
+  drawSquadBanners(c, V);
 
   // işçi parçacıkları ve inşaat kıvılcımı
   if (dt > 0) for (const u of g.ents) {
