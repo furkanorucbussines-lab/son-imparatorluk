@@ -242,18 +242,52 @@ function siege(u, S, civ, col) {
   else { const a = -0.5 + S.sw * 2; box(0.1, 0, 1.0, 0.1, 0.5, 0.45, '#6a4a28', 0.1); cap(0.1, 0, 1.3, 0.1 - Math.cos(a) * 1.5, 0, 1.3 + Math.sin(a) * 1.5, 0.08, '#7a5a30', 0.2); sph(0.1 + Math.cos(a) * 1.0, 0, 1.3 - Math.sin(a) * 1.0, 0.25, 0.25, 0.25, '#3a2a1a', 0.22); }
 }
 
+/* ---------- hava araçları ---------- */
+function aircraft(u, S, civ, col) {
+  const t = u.type, bz = civ === 'bizans', hull = bz ? '#8e9aae' : '#8f9a74', hull2 = bz ? '#5c667a' : '#626a4c', glass = '#7ab8e0', ang = S.t * 38 + u.id;
+  if (t === 'heli') {
+    cap(-0.5, 0, 0.95, 0.75, 0, 0.9, 0.5, hull); sph(0.8, 0, 0.96, 0.42, 0.36, 0.3, glass, 0.1); cap(-0.5, 0, 1.02, -1.75, 0, 1.18, 0.13, hull2, 0.02);
+    cap(-1.75, 0, 1.15, -1.9, 0, 1.55, 0.07, hull2, 0.03); box(-0.1, 0.5, 0.95, 0.4, 0.02, 0.12, col, 0.15);
+    for (const s of [-1, 1]) { cap(-0.5, s * 0.42, 0.38, 0.75, s * 0.42, 0.38, 0.05, '#2a2a30', 0.02); cap(0.1, s * 0.3, 0.7, 0.1, s * 0.42, 0.4, 0.04, '#2a2a30', 0.01); cap(-0.4, s * 0.3, 0.7, -0.4, s * 0.42, 0.4, 0.04, '#2a2a30', 0.01); }
+    cap(0.05, 0, 1.4, 0.05, 0, 1.58, 0.07, '#2a2a30', 0.05);
+    for (let k = 0; k < 4; k++) { const a = ang + k * 1.5708; cap(0.05, 0, 1.6, 0.05 + Math.cos(a) * 1.7, Math.sin(a) * 1.7, 1.6, 0.045, '#3a3a40', 0.2); }
+    const ta = ang * 1.7; cap(-1.9, 0, 1.55, -1.9, Math.cos(ta) * 0.35, 1.55 + Math.sin(ta) * 0.35, 0.03, '#3a3a40', 0.2); cap(-1.9, 0, 1.55, -1.9, -Math.cos(ta) * 0.35, 1.55 - Math.sin(ta) * 0.35, 0.03, '#3a3a40', 0.2);
+    cap(0.4, 0.3, 0.8, 0.95, 0.3, 0.78, 0.07, DARK, 0.05); cap(0.4, -0.3, 0.8, 0.95, -0.3, 0.78, 0.07, DARK, 0.05);
+    if (S.sw > 0.5) flash(1.1, 0.3, 0.78, 0.7); return;
+  }
+  if (t === 'fighter') {
+    cap(-1.2, 0, 0.8, 1.2, 0, 0.8, 0.22, hull); sph(1.45, 0, 0.8, 0.32, 0.16, 0.16, hull2, 0.05); sph(0.45, 0, 0.97, 0.45, 0.14, 0.12, glass, 0.1);
+    for (const s of [-1, 1]) { cap(0.4, s * 0.15, 0.8, -0.8, s * 1.45, 0.8, 0.1, hull2, -0.02); cap(-1.1, s * 0.1, 0.8, -1.5, s * 0.7, 0.8, 0.06, hull2, -0.02); disc(-0.5, s * 0.8, 0.86, 0, 0, 1, 0.14, col, 0.2); cap(-0.2, s * 0.9, 0.7, 0.4, s * 0.9, 0.7, 0.04, '#d8d8e0', 0.05); }
+    cap(-1.1, 0, 0.82, -1.55, 0, 1.45, 0.07, hull2, 0.02); sph(-1.35, 0, 0.8, 0.14, 0.1, 0.1, '#ff9a3a', 0.2); if (S.sw > 0.4) flash(1.9, 0, 0.8, 0.6); return;
+  }
+  if (t === 'bomber') {
+    cap(-1.7, 0, 0.85, 1.4, 0, 0.85, 0.46, hull); sph(1.75, 0, 0.86, 0.5, 0.42, 0.4, hull2, 0.05); sph(1.4, 0, 1.15, 0.35, 0.22, 0.14, glass, 0.1);
+    for (const s of [-1, 1]) { cap(0.2, s * 0.35, 0.85, -0.4, s * 2.3, 0.85, 0.15, hull2, -0.02); for (const k of [0.8, 1.6]) { sph(-0.1 - k * 0.1, s * k, 0.65, 0.35, 0.14, 0.14, '#3a3a42', 0.05); disc(0.15 - k * 0.1, s * k, 0.65, 1, 0, 0, 0.14, '#9aa0aa', 0.2); } cap(-1.6, s * 0.2, 0.85, -2.0, s * 1.0, 0.85, 0.1, hull2, -0.02); }
+    cap(-1.6, 0, 0.9, -2.1, 0, 1.7, 0.1, hull2, 0.02); box(0, 0, 0.85, 0.5, 0.45, 0.05, col, 0.15); return;
+  }
+  // iha / siha
+  const big = t === 'siha';
+  cap(-0.7, 0, 0.85, 0.7, 0, 0.85, big ? 0.2 : 0.15, hull); sph(0.75, 0, 0.82, 0.2, 0.16, 0.16, '#2a2a30', 0.1); sph(0.45, 0, 0.66, 0.12, 0.12, 0.12, '#1a1a1e', 0.1);
+  for (const s of [-1, 1]) { cap(0.1, s * 0.1, 0.85, 0.0, s * (big ? 1.9 : 1.6), 0.85, 0.05, hull2, -0.02); cap(-0.7, s * 0.05, 0.88, -0.9, s * 0.5, 1.05, 0.04, hull2, -0.02); if (big) { cap(0.3, s * 0.9, 0.7, 0.9, s * 0.9, 0.7, 0.06, '#c0392b', 0.05); } }
+  box(-0.1, 0, 0.88, 0.25, 0.1, 0.03, col, 0.15);
+  const a = ang * 1.3; cap(-0.8, 0, 0.85, -0.8, Math.cos(a) * 0.45, 0.85 + Math.sin(a) * 0.45, 0.03, '#2a2a30', 0.2); cap(-0.8, 0, 0.85, -0.8, -Math.cos(a) * 0.45, 0.85 - Math.sin(a) * 0.45, 0.03, '#2a2a30', 0.2);
+  if (big && S.sw > 0.4) flash(1.2, 0, 0.7, 0.7);
+}
+
 /* ---------- genel giriş ---------- */
 const HUMAN = new Set(['villager', 'engineer', 'inf', 'archer', 'musketeer', 'mgun', 'sniper', 'rpg', 'demo', 'medic', 'spy']);
 const MOUNT = new Set(['cav', 'hcav', 'harcher', 'dragoon', 'hero']);
 const VEH = new Set(['tank', 'ltank', 'htank', 'howitzer', 'flak', 'scout', 'raider', 'armored']);
-function handles(t) { return HUMAN.has(t) || MOUNT.has(t) || VEH.has(t) || t === 'dog' || t === 'siege'; }
+const AIR = new Set(['heli', 'fighter', 'bomber', 'iha', 'siha']);
+function handles(t) { return AIR.has(t) || HUMAN.has(t) || MOUNT.has(t) || VEH.has(t) || t === 'dog' || t === 'siege'; }
 function unit(ctx, V, u, o) {
   LOW = !!o.low; const t = u.type, civ = o.civ, bz = civ === 'bizans', col = o.col;
   const S = { ph: o.a.ph, mv: o.a.mv, sw: o.swing, t: o.t, me: V.ME, seat: false };
-  const scale = VEH.has(t) || t === 'siege' ? o.r * 0.95 : t === 'dog' ? o.r * 0.95 : MOUNT.has(t) ? o.r * 0.82 : o.r * 0.98;
+  const scale = AIR.has(t) ? o.r * 0.85 : VEH.has(t) || t === 'siege' ? o.r * 0.95 : t === 'dog' ? o.r * 0.95 : MOUNT.has(t) ? o.r * 0.82 : o.r * 0.98;
   begin(ctx, o.x, o.y, scale, u.face);
   if (HUMAN.has(t)) { const sp = humanSpec(u, civ, col, o.cd, o.cl, S); human(sp, S); }
   else if (t === 'dog') dog(u, S, col);
+  else if (AIR.has(t)) aircraft(u, S, civ, col);
   else if (VEH.has(t)) vehicle(u, S, civ, col, o.cd);
   else if (t === 'siege') siege(u, S, civ, col);
   else if (MOUNT.has(t)) {
