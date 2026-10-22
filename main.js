@@ -431,6 +431,91 @@ window.addEventListener('keydown', ev => {
 window.addEventListener('keyup', ev => { delete keys[ev.key]; });
 window.addEventListener('blur', () => { keys = {}; });
 
+/* ---------- dokunmatik (telefon/tablet) ---------- */
+const IS_TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window;
+if (IS_TOUCH) document.body.classList.add('touch');
+let boxMode = false; const tpts = new Map(); let tg = null, pinch = null;
+function tSetMouse(x, y) { mouse.x = x; mouse.y = y; const w = toWorld(x, y); mouse.wx = w.x; mouse.wy = w.y; }
+function synthClick(x, y) { // modlar ve seçim için fare tıklamasını taklit et
+  cv.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y, button: 0, bubbles: true }));
+  window.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y, button: 0, bubbles: true }));
+}
+function tapAt(x, y) {
+  tSetMouse(x, y);
+  if (mode) { synthClick(x, y); return; }
+  const e = entityAt(mouse.wx, mouse.wy, true), mine = myUnits(selected());
+  if (e && e.k === 'u' && e.owner === ME) { synthClick(x, y); return; }
+  if (mine.length && !boxMode) {
+    if (e && e.k === 'b' && e.owner === ME && !mine.some(u => u.type === 'villager' || u.type === 'engineer')) { synthClick(x, y); return; }
+    if (e && e.k === 'b' && e.owner === ME && e.done && e.hp >= e.maxhp && !BLD[e.type].farm && !BLD[e.type].drop) { synthClick(x, y); return; }
+    rightClick(); return;
+  }
+  synthClick(x, y);
+}
+cv.addEventListener('pointerdown', ev => {
+  if (ev.pointerType === 'mouse' || !g) return;
+  ev.preventDefault(); try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* yok */ }
+  GameAudio.unlock(); tpts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (tpts.size === 2) {
+    clearTimeout(tg && tg.lp); tg = null; if (drag) drag = null; if (wallDrag) wallDrag = null;
+    const [a, b] = [...tpts.values()]; pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, ts0: ts };
+    return;
+  }
+  if (tpts.size > 2) return;
+  tSetMouse(ev.clientX, ev.clientY);
+  tg = { x0: ev.clientX, y0: ev.clientY, cx0: cam.x, cy0: cam.y, moved: false, long: false };
+  if (mode && mode.k === 'place' && mode.type === 'wall') wallDrag = { x: Math.floor(mouse.wx), y: Math.floor(mouse.wy) };
+  tg.lp = setTimeout(() => { // basılı tut: aynı türden hepsini seç
+    if (!tg || tg.moved || mode) return; const e = entityAt(mouse.wx, mouse.wy, true);
+    if (e && e.k === 'u' && e.owner === ME) { tg.long = true; doClickSelect(false, true); if (navigator.vibrate) navigator.vibrate(15); }
+  }, 520);
+}, { passive: false });
+cv.addEventListener('pointermove', ev => {
+  if (ev.pointerType === 'mouse' || !tpts.has(ev.pointerId)) return;
+  ev.preventDefault(); tpts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (pinch && tpts.size === 2) {
+    const [a, b] = [...tpts.values()], cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2, d = Math.hypot(a.x - b.x, a.y - b.y), before = toWorld(cx, cy);
+    ts = Math.max(20, Math.min(64, pinch.ts0 * d / pinch.d0)); cam.x = before.x - cx / ts; cam.y = before.y - cy / ts; clampCam(); return;
+  }
+  if (!tg) return;
+  const dx = ev.clientX - tg.x0, dy = ev.clientY - tg.y0;
+  if (!tg.moved && Math.hypot(dx, dy) > 9) { tg.moved = true; clearTimeout(tg.lp); }
+  tSetMouse(ev.clientX, ev.clientY);
+  if (!tg.moved) return;
+  if (mode) return;                      // yerleştirme/güç modunda parmak nişan alır
+  if (boxMode) { drag = { x0: tg.x0, y0: tg.y0, moved: true, t: performance.now() }; return; }
+  cam.x = tg.cx0 - dx / ts; cam.y = tg.cy0 - dy / ts; clampCam();
+}, { passive: false });
+function tEnd(ev) {
+  if (ev.pointerType === 'mouse' || !tpts.has(ev.pointerId)) return;
+  tpts.delete(ev.pointerId); if (tpts.size < 2) pinch = null;
+  if (!tg || tpts.size) { if (!tpts.size) tg = null; return; }
+  clearTimeout(tg.lp); const t = tg; tg = null;
+  if (ev.type === 'pointercancel') { drag = null; wallDrag = null; return; }
+  tSetMouse(ev.clientX, ev.clientY);
+  if (wallDrag) { finishWall(); return; }
+  if (t.long) return;
+  if (drag) { doSelectBox(drag.x0, drag.y0, ev.clientX, ev.clientY, false); drag = null; return; }
+  if (mode && mode.k === 'place') { tryPlace(); return; }
+  if (mode) { if (t.moved) { synthClick(ev.clientX, ev.clientY); } else synthClick(ev.clientX, ev.clientY); return; }
+  if (!t.moved) tapAt(ev.clientX, ev.clientY);
+}
+cv.addEventListener('pointerup', tEnd); cv.addEventListener('pointercancel', tEnd);
+mini.addEventListener('pointerdown', ev => { if (ev.pointerType === 'mouse' || !g) return; ev.preventDefault(); const r = mini.getBoundingClientRect(); centerOn((ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H); mini._tdrag = true; try { mini.setPointerCapture(ev.pointerId); } catch (e) { /* yok */ } }, { passive: false });
+mini.addEventListener('pointermove', ev => { if (ev.pointerType === 'mouse' || !mini._tdrag) return; const r = mini.getBoundingClientRect(); centerOn((ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H); });
+mini.addEventListener('pointerup', () => { mini._tdrag = false; });
+// mobil araç çubuğu
+const tb = $('tbar');
+if (tb) tb.addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b || !g || !running) return; const s = selected(), a = b.dataset.t;
+  if (a === 'amove') { if (myUnits(s).some(u => u.type !== 'villager')) { mode = { k: 'amove' }; toast('Saldırarak gidilecek yere dokun', 1600); } else snd.err(); }
+  else if (a === 'stop') { if (myUnits(s).length) Sim.cmdStop(g, sel); }
+  else if (a === 'box') { boxMode = !boxMode; b.classList.toggle('on', boxMode); toast(boxMode ? 'Kutu seçim: parmağını sürükle' : 'Kutu seçim kapalı: sürükleyince harita kayar', 1600); }
+  else if (a === 'home') { const tc = g.ents.find(e => !e.dead && e.owner === ME && e.type === 'tc'); if (tc) { const c = Sim.centerOf(tc); centerOn(c.x, c.y); sel = [tc.id]; } }
+  else if (a === 'cancel') { mode = null; wallDrag = null; sel = []; }
+  else if (a === 'full') { const d = document, el = d.documentElement; if (d.fullscreenElement) d.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen().then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* yok */ } }).catch(() => {}); }
+});
+
 mini.addEventListener('mousedown', ev => {
   ev.preventDefault(); if (!g) return;
   const r = mini.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * W, y = (ev.clientY - r.top) / r.height * H;
@@ -518,13 +603,14 @@ function enterGame() {
   ts = 38; resize(); centerOn(c.x + 1, c.y + 2); sel = [tc.id];
   $('menu').classList.add('hide'); $('hud').classList.remove('hide'); $('pausePanel').classList.add('hide');
   running = true; lastSig = ''; startMusic(); GameAudio.duck(false);
+  if (IS_TOUCH) { try { const el = document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* yok */ } }).catch(() => {}); } catch (e) { /* yok */ } }
   for (const id of ['saves', 'settings']) $(id).classList.add('hide');
 }
 
 window.addEventListener('resize', resize);
 resize(); applySettings(); pickCiv('osmanli'); pickDiff('normal'); showMenu();
 requestAnimationFrame(t => { last = t; frame(t); });
-window.__game = { startCampaign, get g() { return g; }, get settings() { return settings; }, set settings(v) { settings = v; }, DEFSET, applySettings, save: saveGame, load: loadGame, listSaves, deleteSave, Sim, centerOn, setZoom: z => { ts = z; resize(); }, select: ids => { sel = ids; lastSig = ""; } };
+window.__game = { startCampaign, get sel() { return sel; }, set sel(v) { sel = v; }, get cam() { return cam; }, get ts() { return ts; }, get g() { return g; }, get settings() { return settings; }, set settings(v) { settings = v; }, DEFSET, applySettings, save: saveGame, load: loadGame, listSaves, deleteSave, Sim, centerOn, setZoom: z => { ts = z; resize(); }, select: ids => { sel = ids; lastSig = ""; } };
 })();
 
 /* ---------- bina açıklaması (üstüne gelince) ---------- */

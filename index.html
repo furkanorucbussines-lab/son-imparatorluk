@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="Son İmparatorluk: Osmanlı ve Bizans'ın 4 çağlık, internetsiz, tarayıcıda oynanan gerçek zamanlı strateji oyunu. Kızıl Elma görevleriyle 1453 kuşatmasını yaşa.">
 <meta name="theme-color" content="#10140c">
 <meta property="og:title" content="Son İmparatorluk">
@@ -112,6 +112,36 @@ h1{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;background:linea
 .prog span{position:absolute;inset:0;text-align:center;font-size:11px;line-height:16px;font-weight:700;text-shadow:0 1px 2px #000}
 .cb em{white-space:normal;text-align:center;line-height:1.15}
 @media(max-width:820px){#info{width:170px}.cb{width:84px}#miniWrap{display:none}}
+
+/* ---- dokunmatik / telefon ---- */
+canvas#map,#mini{touch-action:none}
+#tbar,#rot{display:none}
+body.touch #tbar{display:flex;flex-direction:column;gap:6px;position:absolute;right:8px;bottom:170px;z-index:8}
+#tbar button{width:46px;height:46px;border-radius:12px;border:1px solid #6a7a44;background:linear-gradient(#3a4527ee,#1c2412ee);color:#fff;font-size:19px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px #000a}
+#tbar button small{font-size:9px;margin-top:1px;color:#d9d2b0}
+#tbar button.on{border-color:var(--gold);background:linear-gradient(#6a5a1cee,#3a2e0cee)}
+#tbar button:active{filter:brightness(1.4)}
+#rot{position:fixed;inset:0;z-index:50;background:#0a0d07f2;color:#f3d778;font:600 24px/1.5 system-ui,sans-serif;text-align:center;align-items:center;justify-content:center}
+@media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}
+@media (max-height:560px){
+  #top{height:34px;gap:4px;padding:0 6px;font-size:13px;overflow:hidden}
+  #top .res{padding:2px 6px;min-width:0}
+  #top button{padding:3px 7px}
+  #power b{display:none}
+  #envbox,#agebox span{display:none}
+  #panel{height:112px;padding:5px;gap:5px}
+  #info{width:150px;padding:5px 8px;font-size:12px}
+  .cb{width:76px;height:50px}
+  .cb b{font-size:17px}.cb span{font-size:10px}.cb em{font-size:9px}
+  #miniWrap{width:104px;height:100px}#mini{width:100px;height:100px}
+  #mute,#music,#pause{display:none}
+  #cmds{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  body.touch #tbar{bottom:118px;right:6px;flex-direction:column;flex-wrap:wrap-reverse;align-content:flex-start;max-height:calc(100vh - 160px)}
+  #tbar button{width:38px;height:38px;font-size:15px}
+  #objs{top:38px;left:6px;width:190px;font-size:11px;padding:6px 8px}
+  #story{bottom:122px;max-width:60vw}#story span{font-size:13px}
+  #toasts{top:38px}
+}
 </style>
 <link rel="stylesheet" href="menu.css">
 <link rel="stylesheet" href="pause.css">
@@ -157,6 +187,8 @@ h1{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;background:linea
   </div>
   <div id="toasts"></div>
   <div id="objs" class="hide"></div>
+  <div id="tbar"><button data-t="amove" title="Saldırarak ilerle">⚔<small>Saldır</small></button><button data-t="stop" title="Dur">⏹<small>Dur</small></button><button data-t="box" title="Kutu seçim">▭<small>Seç</small></button><button data-t="home" title="Şehir Merkezi">🏰<small>Şehir</small></button><button data-t="cancel" title="İptal">✖<small>İptal</small></button><button data-t="full" title="Tam ekran">⛶<small>Ekran</small></button></div>
+  <div id="rot"><div>📱<br>Telefonu <b>yatay</b> çevir</div></div>
   <div id="story" class="hide"><b></b><span></span></div>
   <div id="banner" class="hide"><b></b><span></span></div>
   <div id="panel">
@@ -370,7 +402,7 @@ h1{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;background:linea
 <script src="facts.js"></script>
 <script src="menu.js"></script>
 <script>
-(function(){try{var coarse=matchMedia('(pointer:coarse)').matches&&!matchMedia('(pointer:fine)').matches;if(!coarse)return;var b=document.createElement('div');b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:999;padding:10px 14px;background:#e8c24a;color:#2a1a00;font:600 14px system-ui;text-align:center';b.textContent='Bu oyun fare ve klavyeyle tasarlandı; en iyi deneyim için bilgisayardan aç. (Dokunmak için kapat)';b.onclick=function(){b.remove()};document.body.appendChild(b)}catch(e){}})();
+(function(){try{var coarse=matchMedia('(pointer:coarse)').matches&&!matchMedia('(pointer:fine)').matches;if(!coarse)return;var b=document.createElement('div');b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:999;padding:10px 14px;background:#e8c24a;color:#2a1a00;font:600 14px system-ui;text-align:center';b.textContent='Dokunmatik kontrol: dokun = seç/komut, sürükle = kaydır, iki parmak = yakınlaştır. Yatay tut. (Kapatmak için dokun)';b.onclick=function(){b.remove()};document.body.appendChild(b)}catch(e){}})();
 </script>
 </body>
 </html>

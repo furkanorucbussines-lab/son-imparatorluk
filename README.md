@@ -14,6 +14,9 @@ Osmanlı ve Bizans'ın karşı karşıya geldiği, **tarayıcıda oynanan gerçe
 ## Kontroller
 Fare: sol tık seç, sağ tık emir · `A` saldırarak ilerle · `S` dur · `H` şehir merkezi · `.` boştaki köylü · `P`/`Esc` duraklat · `Ctrl+1-9` grup · `Del` binayı sat
 
+## Telefon / tablet
+Yatay tutarak oyna. Dokun = seç ya da komut ver, sürükle = haritayı kaydır, iki parmak = yakınlaştır, basılı tut = aynı türden hepsini seç. Sağdaki düğmeler: Saldır, Dur, Kutu seç, Şehir, İptal, Tam ekran.
+
 ## Yerelde çalıştırma
 `index.html` dosyasını tarayıcıda aç. Testler: `node test/camp.js`, `node test/headless.js 7 normal 900`.
 
